@@ -1,5 +1,5 @@
 const CONFIG = {
-  whatsappNumber: "5585999999999",
+  whatsappNumber: "5585981131932",
   whatsappMessage: "Olá! Gostaria de falar sobre a festa Noite no Cinema - Claurea 60 anos.",
   adminPassword: "cinema60",
   ticketBase: "assets/ticket-print-base.png",
