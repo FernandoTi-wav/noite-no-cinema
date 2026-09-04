@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administração | Noite no Cinema</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Bebas+Neue&family=Limelight&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="admin.css?v=17.0.0">
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="admin-header">
+      <div class="admin-brand">
+        <div class="brand-icon"><i class="fa-solid fa-film"></i></div>
+        <div>
+          <span>NOITE NO CINEMA</span>
+          <h1>PAINEL ADMINISTRATIVO</h1>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <a href="index.html"><i class="fa-solid fa-arrow-left"></i> VOLTAR AO SITE</a>
+        <button id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> SAIR</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="summary-grid summary-grid-v9">
+        <article><span>INSCRIÇÕES</span><strong id="totalInscricoes">0</strong><i class="fa-solid fa-users"></i></article>
+        <article><span>INGRESSOS EMITIDOS</span><strong id="totalIngressos">0</strong><i class="fa-solid fa-ticket"></i></article>
+        <article><span>CHECK-INS</span><strong id="totalPresentes">0</strong><i class="fa-solid fa-circle-check"></i></article>
+        <article><span>VAGAS RESTANTES</span><strong id="vagasRestantes">0</strong><i class="fa-solid fa-chair"></i></article>
+      </section>
+
+      <section class="table-panel">
+        <div class="table-header">
+          <div>
+            <small>LISTA DE CONVIDADOS</small>
+            <h2>CREDENCIAMENTO</h2>
+          </div>
+
+          <div class="admin-toolbar">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="searchInput" type="text" placeholder="Buscar nome, CPF ou código">
+            </div>
+
+            <select id="statusFilter" class="status-filter" aria-label="Filtrar presença">
+              <option value="todos">TODOS</option>
+              <option value="pendentes">PENDENTES</option>
+              <option value="presentes">COM CHECK-IN</option>
+            </select>
+<button id="exportCsvBtn" class="export-btn">
+              <i class="fa-solid fa-file-csv"></i>
+              EXPORTAR CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>CONVIDADO</th>
+                <th>CPF</th>
+                <th>INGRESSOS / CHECK-IN</th>
+                <th>CADASTRO</th>
+                <th>RESUMO</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="guestTable"></tbody>
+          </table>
+        </div>
+
+        <div class="empty-state hidden" id="emptyState">
+          <i class="fa-solid fa-ticket"></i>
+          <h3>NENHUMA INSCRIÇÃO ENCONTRADA</h3>
+          <p>Os convidados cadastrados aparecerão aqui.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <!-- VISUALIZAÇÃO / REIMPRESSÃO DE INGRESSO -->
+  <div class="ticket-admin-modal" id="ticketAdminModal" aria-hidden="true">
+    <div class="ticket-admin-dialog">
+      <button type="button" class="ticket-admin-close" id="ticketAdminClose" aria-label="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="ticket-admin-heading">
+        <small>INGRESSO DO CONVIDADO</small>
+        <h2 id="ticketAdminTitle">INGRESSO VIP</h2>
+        <p id="ticketAdminGuest"></p>
+      </div>
+
+      <div class="ticket-admin-preview">
+        <div class="ticket-admin-loading" id="ticketAdminLoading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          PREPARANDO INGRESSO...
+        </div>
+        <img id="ticketAdminImage" alt="Ingresso para reimpressão">
+      </div>
+
+      <div class="ticket-admin-actions">
+        <button type="button" id="ticketAdminDownload">
+          <i class="fa-solid fa-download"></i>
+          BAIXAR PNG
+        </button>
+
+        <button type="button" id="ticketAdminPrint">
+          <i class="fa-solid fa-print"></i>
+          IMPRIMIR
+        </button>
+      </div>
+
+      <p class="ticket-admin-note">
+        Use <strong>Baixar PNG</strong> para enviar o ingresso manualmente pelo WhatsApp.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- CONFIRMAÇÃO DE EXCLUSÃO -->
+  <div class="admin-confirm-modal" id="adminConfirmModal" aria-hidden="true">
+    <div class="admin-confirm-dialog">
+      <div class="admin-confirm-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <small>CONFIRMAR EXCLUSÃO</small>
+      <h2>REMOVER CONVIDADO?</h2>
+      <p id="adminConfirmText">O cadastro e os ingressos vinculados serão removidos.</p>
+
+      <div class="admin-confirm-actions">
+        <button type="button" class="secondary" id="adminConfirmCancel">CANCELAR</button>
+        <button type="button" class="danger" id="adminConfirmDelete">
+          <i class="fa-solid fa-trash"></i>
+          EXCLUIR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-toast" id="adminToast"></div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="apps-script-config.js?v=17.0.0"></script>
+  <script src="admin.js?v=17.0.0"></script>
+</body>
+</html>

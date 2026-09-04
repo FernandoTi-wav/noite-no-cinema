@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050403">
+  <title>Noite no Cinema | Claurea 60 Anos</title>
+
+  <!-- Fontes com linguagem mais cinematográfica -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Bebas+Neue&family=Great+Vibes&family=Limelight&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=15.0.0">
+</head>
+<body>
+
+  <!-- ABERTURA -->
+  <div class="cinema-intro" id="cinemaIntro">
+    <div class="intro-curtain intro-curtain-left"></div>
+    <div class="intro-curtain intro-curtain-right"></div>
+
+    <div class="intro-content">
+      <div class="intro-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+      <small>APRESENTA</small>
+      <h1>NOITE NO <strong class="marquee-word" data-text="CINEMA">CINEMA</strong></h1>
+      <div class="intro-line"></div>
+      <p>Claurea 60 anos</p>
+    </div>
+  </div>
+
+  <!-- FUNDO -->
+  <div class="cinematic-background" aria-hidden="true">
+    <div class="vignette"></div>
+    <div class="beam beam-left"></div>
+    <div class="beam beam-right"></div>
+    <div id="particles"></div>
+    <div class="grain"></div>
+  </div>
+
+  <div class="page-shell">
+    <header class="header reveal reveal-1">
+      <a href="#inicio" class="brand">
+        <div class="brand-reel"><i class="fa-solid fa-film"></i></div>
+        <div class="brand-copy">
+          <span>NOITE NO</span>
+          <strong>CINEMA</strong>
+        </div>
+      </a>
+
+      <nav class="nav-actions">
+        <a href="#ingresso" class="nav-link desktop-only">INGRESSOS</a>
+
+        <button type="button" class="contact-button" id="contactButton">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>CONTATO</span>
+        </button>
+
+        <button type="button" class="admin-button" id="adminButton">
+          <i class="fa-solid fa-lock"></i>
+          <span>ADMINISTRAÇÃO</span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- HERO -->
+      <section class="hero" id="inicio">
+        <div class="hero-content">
+          <div class="hero-stars reveal reveal-2">
+            <span>★</span><span>★</span><span class="main-star">★</span><span>★</span><span>★</span>
+          </div>
+
+          <div class="hero-kicker reveal reveal-2">
+            <span></span>
+            <p>VOCÊ ESTÁ CONVIDADO PARA UMA</p>
+            <span></span>
+          </div>
+
+          <h1 class="hero-title reveal reveal-3">
+            <span>NOITE NO</span>
+
+            <div class="hero-marquee-sign" aria-label="CINEMA">
+              <img
+                src="assets/cinema-marquee-transparent-v8.png?v=8.0.0"
+                alt="CINEMA"
+              >
+              <i class="marquee-spark spark-a"></i>
+              <i class="marquee-spark spark-b"></i>
+              <i class="marquee-spark spark-c"></i>
+            </div>
+          </h1>
+
+          <div class="birthday reveal reveal-4">
+            <span class="birthday-name">Claurea</span>
+            <span class="birthday-age">60</span>
+            <span class="birthday-years">ANOS</span>
+          </div>
+
+          <div class="gold-divider reveal reveal-4">
+            <span></span><i class="fa-solid fa-star"></i><span></span>
+          </div>
+
+          <div class="event-grid">
+            <article class="event-card reveal reveal-5">
+              <i class="fa-regular fa-calendar"></i>
+              <div><small>DATA</small><strong>07/11/2026</strong><span>SÁBADO</span></div>
+            </article>
+
+            <article class="event-card reveal reveal-6">
+              <i class="fa-regular fa-clock"></i>
+              <div><small>HORÁRIO</small><strong>19:45</strong><span>PONTUALMENTE</span></div>
+            </article>
+
+            <article class="event-card location reveal reveal-7">
+              <i class="fa-solid fa-location-dot"></i>
+              <div><small>LOCAL</small><strong>Salão de Festas do Golf Ville</strong><span>PORTO DAS DUNAS</span></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- INGRESSOS -->
+      <section class="ticket-section reveal-section" id="ingresso">
+        <div class="section-heading">
+          <small>★ INGRESSO PESSOAL E INTRANSFERÍVEL ★</small>
+          <h2>GARANTA SUA ENTRADA</h2>
+          <p>Preencha os dados. Cada ingresso terá um número, código e código de barras exclusivos.</p>
+        </div>
+
+        <div class="ticket-layout">
+          <aside class="registration-panel">
+            <div class="panel-heading">
+              <div>
+                <small>01 / CREDENCIAMENTO</small>
+                <h3>DADOS DO CONVIDADO</h3>
+              </div>
+              <i class="fa-solid fa-ticket"></i>
+            </div>
+
+            <form id="ticketForm">
+              <label class="field">
+                <span>NOME COMPLETO</span>
+                <div class="field-control">
+                  <i class="fa-regular fa-user"></i>
+                  <input id="nome" type="text" autocomplete="name" placeholder="Digite seu nome" required>
+                </div>
+              </label>
+
+              <label class="field">
+                <span>CPF</span>
+                <div class="field-control">
+                  <i class="fa-regular fa-id-card"></i>
+                  <input id="cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required>
+                </div>
+              </label>
+
+              <label class="field">
+                <span>QUANTIDADE DE INGRESSOS</span>
+                <div class="field-control">
+                  <i class="fa-solid fa-ticket-simple"></i>
+                  <select id="quantidade" required>
+                    <option value="">Selecione</option>
+                    <option value="1">1 ingresso</option>
+                    <option value="2">2 ingressos</option>
+                    <option value="3">3 ingressos</option>
+                    <option value="4">4 ingressos</option>
+                  </select>
+                  <i class="fa-solid fa-chevron-down select-arrow"></i>
+                </div>
+              </label>
+
+              <button type="submit" class="primary-button" id="generateButton">
+                <span class="button-glow"></span>
+                <span class="button-content"><i class="fa-solid fa-user-check"></i> FAZER CADASTRO</span>
+              </button>
+            </form>
+
+            <div class="print-hint">
+              <i class="fa-solid fa-print"></i>
+              <p>Depois de gerar, você poderá <strong>baixar em PNG</strong> ou <strong>imprimir em A4 paisagem</strong> para levar no dia da festa.</p>
+            </div>
+          </aside>
+
+          <section class="ticket-showcase">
+            <div class="showcase-light"></div>
+
+            <div class="ticket-placeholder" id="ticketPlaceholder">
+              <div class="ticket-placeholder-image">
+                <img src="assets/ticket-print-base.png" alt="Prévia do ingresso Noite no Cinema">
+                <div class="placeholder-shade"></div>
+              </div>
+
+              <div class="placeholder-copy">
+                <div class="placeholder-icon"><i class="fa-solid fa-ticket"></i></div>
+                <small>SEU INGRESSO VIP</small>
+                <h3>APARECERÁ AQUI</h3>
+                <p>Após a confirmação, o sistema cria uma versão pronta para impressão.</p>
+              </div>
+            </div>
+
+            <div class="ticket-results hidden" id="ticketResults"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- DESTAQUES -->
+      <section class="experience reveal-section">
+        <article>
+          <i class="fa-solid fa-star"></i>
+          <div><small>ESTREIA ESPECIAL</small><h3>CELEBRE COM ESTILO</h3><p>Uma noite inspirada nas grandes estreias do cinema.</p></div>
+        </article>
+        <article>
+          <i class="fa-solid fa-clapperboard"></i>
+          <div><small>AMBIENTE VIP</small><h3>CLIMA DE CINEMA</h3><p>Elegância, música e uma experiência preparada para você.</p></div>
+        </article>
+        <article>
+          <i class="fa-solid fa-camera-retro"></i>
+          <div><small>LUZ, CÂMERA...</small><h3>MOMENTOS INESQUECÍVEIS</h3><p>Vista-se à caráter e faça parte dessa grande estreia.</p></div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <i class="fa-solid fa-film"></i>
+      <span>★</span>
+      <p>VISTA-SE À CARÁTER E VENHA VIVER UMA NOITE DE ESTREIA <strong>INESQUECÍVEL!</strong></p>
+      <span>★</span>
+    </footer>
+  </div>
+
+
+  <!-- INDICADOR TEMPORÁRIO DO GOOGLE SHEETS -->
+  <!-- WHATSAPP FLUTUANTE -->
+  <button class="whatsapp-floating" id="whatsappFloating" type="button" aria-label="Contato pelo WhatsApp">
+    <span>FALE CONOSCO</span>
+    <i class="fa-brands fa-whatsapp"></i>
+  </button>
+
+  <!-- LOGIN ADMIN -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="admin-modal">
+      <button type="button" class="modal-close" id="closeAdmin"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-icon"><i class="fa-solid fa-lock"></i></div>
+      <small>ÁREA RESTRITA</small>
+      <h2>ADMINISTRAÇÃO</h2>
+      <p>Digite a senha para acessar a lista de convidados.</p>
+
+      <div class="field-control modal-field">
+        <i class="fa-solid fa-key"></i>
+        <input id="adminPassword" type="password" placeholder="Senha">
+      </div>
+
+      <button type="button" class="primary-button" id="loginAdmin">
+        <span class="button-glow"></span>
+        <span class="button-content">ACESSAR PAINEL <i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- CONFIRMAÇÃO DE CADASTRO -->
+  <div class="success-overlay" id="successModal" aria-hidden="true">
+    <div class="success-modal">
+      <div class="success-popcorn"></div>
+      <div class="success-icon-wrap">
+        <div class="success-ring"></div>
+        <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+      </div>
+      <small id="successKicker">CADASTRO CONCLUÍDO</small>
+      <h2 id="successTitle">TUDO CERTO!</h2>
+      <p id="successText">Seu cadastro foi realizado com sucesso. Estamos preparando seu ingresso.</p>
+      <div class="success-counter" id="successCounter">1 ingresso confirmado</div>
+      <div class="success-loader"><span></span></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Barcode real CODE128 -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+  <!-- Google Sheets + Apps Script -->
+  <script src="apps-script-config.js?v=15.0.0"></script>
+  <script src="script.js?v=15.0.0"></script>
+</body>
+</html>
