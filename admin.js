@@ -499,7 +499,7 @@ async function confirmarExclusao() {
           token: getAdminToken(),
           code
         },
-        { timeoutMs: 30000, retries: 0 }
+        { timeoutMs: 30000, retries: 1 }
       );
 
       inviteCodes = inviteCodes.filter(item => item.code !== code);
@@ -545,8 +545,14 @@ async function confirmarExclusao() {
 
     if (message.includes("INVITE_CODE_REDEEMED")) {
       showAdminToast("Códigos já resgatados não podem ser excluídos.", true);
+    } else if (message.includes("INVITE_CODE_DUPLICATED_CONFIG")) {
+      showAdminToast("Existem códigos duplicados na planilha. Remova a duplicata e tente novamente.", true);
+    } else if (message.includes("REQUEST_TIMEOUT")) {
+      showAdminToast("O servidor demorou para responder. Tente excluir novamente.", true);
+    } else if (message.includes("NETWORK_ERROR")) {
+      showAdminToast("Falha de conexão ao excluir. Tente novamente.", true);
     } else {
-      showAdminToast("Não foi possível concluir a exclusão.", true);
+      showAdminToast(`Não foi possível excluir: ${message || "erro desconhecido"}`, true);
     }
   } finally {
     adminConfirmDelete.disabled = false;
