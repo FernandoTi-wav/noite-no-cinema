@@ -710,7 +710,7 @@ async function criarImagemIngressoAdmin(ticket, index, total) {
   return canvas.toDataURL("image/png");
 }
 
-async async function abrirIngressoAdmin(itemIndex, ticketIndex, button) {
+async function abrirIngressoAdmin(itemIndex, ticketIndex, button) {
   const item = inscricoes[itemIndex];
   const tickets = normalizeTickets(item);
   const ticket = tickets[ticketIndex];
