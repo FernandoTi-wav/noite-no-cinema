@@ -55,58 +55,86 @@ function getWebAppUrl() {
 }
 
 function getAdminToken() {
-  return sessionStorage.getItem("cinemaAdminToken") || "";
+  return (
+    sessionStorage.getItem("cinemaAdminToken") ||
+    localStorage.getItem("cinemaAdminToken") ||
+    ""
+  );
 }
 
-async function sheetsRequest(action, payload = {}) {
+function clearAdminToken() {
+  clearAdminToken();
+  localStorage.removeItem("cinemaAdminToken");
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function sheetsRequest(action, payload = {}, options = {}) {
   if (!navigator.onLine) {
     throw new Error("NETWORK_OFFLINE");
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 18000);
+  const timeoutMs = Number(options.timeoutMs || 18000);
+  const retries = Math.max(0, Number(options.retries || 0));
 
-  try {
-    const response = await fetch(getWebAppUrl(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      redirect: "follow",
-      signal: controller.signal,
-      body: JSON.stringify({ action, ...payload })
-    });
-
-    if (!response.ok) {
-      throw new Error("HTTP_" + response.status);
-    }
-
-    const text = await response.text();
-    let data;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      data = JSON.parse(text);
-    } catch (_) {
-      throw new Error("INVALID_APPS_SCRIPT_RESPONSE");
-    }
+      const response = await fetch(getWebAppUrl(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        redirect: "follow",
+        cache: "no-store",
+        signal: controller.signal,
+        body: JSON.stringify({ action, ...payload })
+      });
 
-    if (!data.ok) {
-      throw new Error(data.error || "APPS_SCRIPT_ERROR");
-    }
+      if (!response.ok) {
+        throw new Error("HTTP_" + response.status);
+      }
 
-    return data;
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      throw new Error("REQUEST_TIMEOUT");
-    }
+      const text = await response.text();
+      let data;
 
-    if (error instanceof TypeError) {
-      throw new Error("NETWORK_ERROR");
-    }
+      try {
+        data = JSON.parse(text);
+      } catch (_) {
+        throw new Error("INVALID_APPS_SCRIPT_RESPONSE");
+      }
 
-    throw error;
-  } finally {
-    clearTimeout(timeout);
+      if (!data.ok) {
+        throw new Error(data.error || "APPS_SCRIPT_ERROR");
+      }
+
+      return data;
+    } catch (error) {
+      const normalized =
+        error?.name === "AbortError"
+          ? new Error("REQUEST_TIMEOUT")
+          : error instanceof TypeError
+            ? new Error("NETWORK_ERROR")
+            : error;
+
+      const retryable =
+        normalized.message === "REQUEST_TIMEOUT" ||
+        normalized.message === "NETWORK_ERROR" ||
+        /^HTTP_5\d\d$/.test(normalized.message);
+
+      if (attempt < retries && retryable) {
+        await wait(350 + attempt * 350);
+        continue;
+      }
+
+      throw normalized;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 }
 
@@ -128,6 +156,48 @@ function showAdminToast(message, isError = false) {
   toastTimer = setTimeout(() => {
     adminToast.classList.remove("show");
   }, 3300);
+}
+
+const ADMIN_SNAPSHOT_KEY = "cinemaAdminSnapshot";
+
+function saveAdminSnapshot(result) {
+  try {
+    localStorage.setItem(
+      ADMIN_SNAPSHOT_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        capacity: Number(result.capacity || CONFIG_ADMIN.capacidadeEvento),
+        registrations: result.registrations || []
+      })
+    );
+  } catch (_) {}
+}
+
+function loadAdminSnapshot() {
+  try {
+    const snapshot = JSON.parse(localStorage.getItem(ADMIN_SNAPSHOT_KEY) || "null");
+
+    if (!snapshot || !Array.isArray(snapshot.registrations)) {
+      return false;
+    }
+
+    // O cache serve apenas para abrir o painel rápido enquanto atualiza ao fundo.
+    if (Date.now() - Number(snapshot.savedAt || 0) > 12 * 60 * 60 * 1000) {
+      return false;
+    }
+
+    inscricoes = snapshot.registrations;
+
+    if (snapshot.capacity) {
+      CONFIG_ADMIN.capacidadeEvento = Number(snapshot.capacity);
+    }
+
+    updateSummary();
+    render();
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 // ============================================================
@@ -234,18 +304,25 @@ async function carregarRemoto({ silent = false } = {}) {
   }
 
   try {
-    const result = await sheetsRequest("adminList", { token });
+    const result = await sheetsRequest(
+      "adminList",
+      { token },
+      { timeoutMs: 12000, retries: 1 }
+    );
+
     inscricoes = result.registrations || [];
 
     if (result.capacity) {
       CONFIG_ADMIN.capacidadeEvento = Number(result.capacity);
     }
 
+    saveAdminSnapshot(result);
     updateSummary();
     render();
   } catch (error) {
     if (isAuthError(error)) {
-      sessionStorage.removeItem("cinemaAdminToken");
+      clearAdminToken();
+      localStorage.removeItem(ADMIN_SNAPSHOT_KEY);
       window.location.href = "index.html";
       return;
     }
@@ -256,11 +333,11 @@ async function carregarRemoto({ silent = false } = {}) {
       const message = String(error?.message || "");
 
       if (message.includes("NETWORK_OFFLINE")) {
-        showAdminToast("Sem internet. Os dados exibidos podem estar desatualizados.", true);
+        showAdminToast("Sem internet. Exibindo a última lista salva.", true);
       } else if (message.includes("REQUEST_TIMEOUT")) {
-        showAdminToast("O servidor demorou para responder. Tente novamente.", true);
+        showAdminToast("Servidor lento. Mantivemos a última lista enquanto tentamos novamente.", true);
       } else {
-        showAdminToast("Não foi possível atualizar a lista de convidados.", true);
+        showAdminToast("Não foi possível atualizar a lista agora.", true);
       }
     }
   }
@@ -322,7 +399,7 @@ async function atualizarCheckIn(itemIndex, ticketIndex, button) {
     console.error(error);
 
     if (isAuthError(error)) {
-      sessionStorage.removeItem("cinemaAdminToken");
+      clearAdminToken();
       window.location.href = "index.html";
       return;
     }
@@ -390,7 +467,7 @@ async function confirmarExclusao() {
     console.error(error);
 
     if (isAuthError(error)) {
-      sessionStorage.removeItem("cinemaAdminToken");
+      clearAdminToken();
       window.location.href = "index.html";
       return;
     }
@@ -874,8 +951,9 @@ exportCsvBtn.addEventListener("click", exportCsv);
 
 
 logoutBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("cinemaAdminToken");
+  clearAdminToken();
   sessionStorage.removeItem("cinemaAdmin");
+  localStorage.removeItem(ADMIN_SNAPSHOT_KEY);
   window.location.href = "index.html";
 });
 
@@ -921,11 +999,19 @@ window.addEventListener("online", () => {
 
 async function iniciarAdmin() {
   if (sheetsConfigurado()) {
-    await carregarRemoto();
+    const hasSnapshot = loadAdminSnapshot();
+
+    // Se já existe uma cópia recente, o painel aparece imediatamente.
+    // A atualização real acontece em seguida, sem bloquear a interface.
+    if (hasSnapshot) {
+      carregarRemoto({ silent: true }).catch(console.error);
+    } else {
+      await carregarRemoto();
+    }
 
     refreshTimer = setInterval(() => {
       carregarRemoto({ silent: true }).catch(console.error);
-    }, 15000);
+    }, 20000);
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
