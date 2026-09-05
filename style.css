@@ -1021,3 +1021,213 @@ button,input,select{font:inherit}button{border:0}a{text-decoration:none;color:in
 /* =========================================================
    V12 — INDICADOR GOOGLE SHEETS / APPS SCRIPT
    ========================================================= */
+
+
+/* ============================================================
+   V20 — VALIDAÇÃO DO CONVITE + CREDENCIAIS INDIVIDUAIS
+   ============================================================ */
+
+.invite-validation-step,
+.attendees-step{
+  display:grid;
+  gap:14px;
+}
+
+.validated-invite-card{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:1px solid rgba(73,181,103,.22);
+  border-radius:10px;
+  background:
+    radial-gradient(circle at 8% 50%,rgba(67,184,98,.08),transparent 24%),
+    rgba(7,8,5,.86);
+}
+
+.validated-invite-icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(79,197,111,.28);
+  border-radius:50%;
+  background:rgba(63,177,92,.07);
+  color:#72ce8b;
+  font-size:18px;
+}
+
+.validated-invite-card small{
+  display:block;
+  font-family:var(--display);
+  font-size:11px;
+  letter-spacing:1.7px;
+  color:#6fa67c;
+}
+
+.validated-invite-card strong{
+  display:block;
+  margin-top:2px;
+  color:#ead7a9;
+  font-family:var(--display);
+  font-size:16px;
+  letter-spacing:1px;
+}
+
+.validated-invite-card span{
+  display:block;
+  margin-top:3px;
+  color:#81796c;
+  font-size:12px;
+}
+
+.validated-invite-card button{
+  min-height:36px;
+  padding:0 10px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid rgba(218,165,60,.18);
+  border-radius:7px;
+  background:#070604;
+  color:#a88a4e;
+  font-family:var(--display);
+  font-size:12px;
+  letter-spacing:.8px;
+  cursor:pointer;
+}
+
+.validated-invite-card button:hover{
+  border-color:rgba(218,165,60,.38);
+  color:#dec06f;
+}
+
+.attendees-heading{
+  padding:4px 2px 0;
+}
+
+.attendees-heading small{
+  font-family:var(--display);
+  font-size:11px;
+  letter-spacing:2px;
+  color:#8d713a;
+}
+
+.attendees-heading h4{
+  margin-top:4px;
+  font-family:var(--cinema);
+  font-size:20px;
+  font-weight:400;
+  color:#e7c369;
+}
+
+.attendees-heading p{
+  margin-top:5px;
+  color:#766d60;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.attendees-fields{
+  display:grid;
+  gap:11px;
+}
+
+.attendee-card{
+  padding:14px;
+  border:1px solid rgba(218,165,60,.15);
+  border-radius:10px;
+  background:
+    linear-gradient(145deg,rgba(14,11,7,.92),rgba(6,5,3,.94));
+  box-shadow:inset 0 0 32px rgba(0,0,0,.18);
+}
+
+.attendee-card-heading{
+  margin-bottom:12px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:10px;
+}
+
+.attendee-number{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(218,165,60,.22);
+  border-radius:50%;
+  color:#c79f4d;
+  font-family:var(--cinema);
+  font-size:14px;
+}
+
+.attendee-card-heading small{
+  display:block;
+  color:#78684d;
+  font-family:var(--display);
+  font-size:10px;
+  letter-spacing:1.4px;
+}
+
+.attendee-card-heading strong{
+  display:block;
+  margin-top:2px;
+  color:#cdbb98;
+  font-family:var(--display);
+  font-size:13px;
+  letter-spacing:.7px;
+}
+
+.attendee-role{
+  padding:5px 7px;
+  border:1px solid rgba(218,165,60,.15);
+  border-radius:5px;
+  background:rgba(218,165,60,.035);
+  color:#8f7a52;
+  font-family:var(--display);
+  font-size:9px;
+  letter-spacing:.8px;
+}
+
+.attendee-card .field{
+  margin-top:10px;
+}
+
+.attendee-card:first-child{
+  border-color:rgba(218,165,60,.27);
+  background:
+    radial-gradient(circle at 0 0,rgba(214,155,44,.06),transparent 34%),
+    linear-gradient(145deg,rgba(16,12,7,.95),rgba(6,5,3,.94));
+}
+
+.attendee-card:first-child .attendee-role{
+  color:#d0aa55;
+  border-color:rgba(218,165,60,.25);
+}
+
+@media(max-width:620px){
+  .validated-invite-card{
+    grid-template-columns:auto 1fr;
+  }
+
+  .validated-invite-card button{
+    grid-column:1/-1;
+    justify-content:center;
+  }
+
+  .attendee-card-heading{
+    grid-template-columns:auto 1fr;
+  }
+
+  .attendee-role{
+    grid-column:1/-1;
+    width:max-content;
+    margin-left:44px;
+  }
+
+  .attendee-card{
+    padding:12px;
+  }
+}
