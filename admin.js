@@ -308,6 +308,61 @@ function normalizeTickets(item) {
   return item.tickets;
 }
 
+function normalizeParticipants(item) {
+  if (Array.isArray(item.participantes) && item.participantes.length) {
+    return item.participantes;
+  }
+
+  const tickets = normalizeTickets(item);
+
+  return tickets.map((ticket, index) => ({
+    role: index === 0 ? "TITULAR" : "ACOMPANHANTE",
+    nome: index === 0 ? item.nome || "" : "",
+    cpf: index === 0 ? item.cpf || "" : "",
+    cpfLast4: index === 0 ? item.cpfLast4 || "" : "",
+    ticketId: ticket.id || "",
+    ticketNumero: ticket.numero,
+    ticketCodigo: ticket.codigo,
+    presente: ticket.presente,
+    checkInEm: ticket.checkInEm
+  }));
+}
+
+function participantForTicket(item, ticketIndex) {
+  const participants = normalizeParticipants(item);
+  return participants[ticketIndex] || null;
+}
+
+function participantSearchValues(item) {
+  return normalizeParticipants(item).flatMap(person => [
+    person.nome,
+    person.cpf,
+    person.cpfLast4,
+    person.ticketCodigo
+  ]);
+}
+
+function participantListHtml(item) {
+  const participants = normalizeParticipants(item);
+
+  return `
+    <div class="participant-list">
+      ${participants.map((person, index) => `
+        <div class="participant-row">
+          <div class="participant-role">
+            <span>${index + 1}</span>
+            <small>${person.role === "TITULAR" ? "TITULAR" : "ACOMP."}</small>
+          </div>
+          <div class="participant-data">
+            <strong>${escapeHtml(person.nome || (index === 0 ? item.nome : "Cadastro antigo"))}</strong>
+            <span>${escapeHtml(formatCpf(person))}</span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function ticketCount(item) {
   return normalizeTickets(item).length;
 }
@@ -668,8 +723,12 @@ async function abrirIngressoAdmin(itemIndex, ticketIndex, button) {
   const tickets = normalizeTickets(item);
   const ticket = tickets[ticketIndex];
 
+  const participant = participantForTicket(item, ticketIndex);
+
   ticketAdminTitle.textContent = ticket.codigo;
-  ticketAdminGuest.textContent = `${item.nome} • ${maskCpf(item)}`;
+  ticketAdminGuest.textContent = participant
+    ? `${participant.nome || item.nome} • ${formatCpf(participant)}`
+    : `${item.nome} • ${formatCpf(item)}`;
   ticketAdminImage.removeAttribute("src");
   ticketAdminImage.classList.remove("ready");
   ticketAdminLoading.classList.remove("hidden");
@@ -794,14 +853,18 @@ function matchesStatus(item) {
   return true;
 }
 
-function ticketHtml(ticket, itemIndex, ticketIndex) {
+function ticketHtml(ticket, itemIndex, ticketIndex, participant = null) {
   const checked = ticket.presente;
+  const personName = participant?.nome || "";
 
   return `
     <div class="ticket-chip ${checked ? "checked" : ""}">
       <div class="ticket-chip-code">
         <i class="fa-solid fa-barcode"></i>
-        <span>${escapeHtml(ticket.codigo)}</span>
+        <div>
+          <span>${escapeHtml(ticket.codigo)}</span>
+          ${personName ? `<small class="ticket-person">${escapeHtml(personName)}</small>` : ""}
+        </div>
       </div>
 
       <div class="ticket-chip-actions">
@@ -839,7 +902,8 @@ function render() {
       item.cpfLast4,
       item.inviteCode,
       item.acompanhantes,
-      ...allCodes(item)
+      ...allCodes(item),
+      ...participantSearchValues(item)
     ]
       .filter(Boolean)
       .join(" ")
@@ -854,47 +918,52 @@ function render() {
   filtered.forEach(item => {
     const itemIndex = inscricoes.indexOf(item);
     const tickets = normalizeTickets(item);
+    const participants = normalizeParticipants(item);
     const checked = checkedCount(item);
+    const acompanhantes = Number(
+      item.acompanhantes ?? Math.max(0, tickets.length - 1)
+    );
 
     const tr = document.createElement("tr");
-
-    const acompanhantes = Number(item.acompanhantes || Math.max(0, tickets.length - 1));
+    tr.className = "credential-group-row";
 
     tr.innerHTML = `
-      <td class="guest-name">
-        <strong>${escapeHtml(item.nome)}</strong>
-        <small>${tickets.length} ${tickets.length === 1 ? "ingresso liberado" : "ingressos liberados"}</small>
-      </td>
+      <td class="credential-invite-cell">
+        <div class="guest-name">
+          <strong>${escapeHtml(item.nome)}</strong>
+          <small>${tickets.length} ${tickets.length === 1 ? "pessoa" : "pessoas"} • ${acompanhantes} ${acompanhantes === 1 ? "acompanhante" : "acompanhantes"}</small>
+        </div>
 
-      <td class="cpf-full">${escapeHtml(formatCpf(item))}</td>
-
-      <td>
         <span class="invite-code-badge">
           <i class="fa-solid fa-key"></i>
           ${escapeHtml(item.inviteCode || "CADASTRO ANTIGO")}
         </span>
       </td>
 
-      <td>
-        <div class="companion-count">
-          <strong>${acompanhantes}</strong>
-          <span>${acompanhantes === 1 ? "ACOMPANHANTE" : "ACOMPANHANTES"}</span>
-        </div>
+      <td class="participants-cell">
+        ${participantListHtml(item)}
       </td>
 
-      <td>
+      <td class="tickets-cell">
         <div class="ticket-chip-list">
           ${tickets
             .map((ticket, ticketIndex) =>
-              ticketHtml(ticket, itemIndex, ticketIndex)
+              ticketHtml(
+                ticket,
+                itemIndex,
+                ticketIndex,
+                participants[ticketIndex] || null
+              )
             )
             .join("")}
         </div>
       </td>
 
-      <td>${escapeHtml(formatDate(item.criadoEm))}</td>
+      <td class="registration-date-cell">
+        ${escapeHtml(formatDate(item.criadoEm))}
+      </td>
 
-      <td>
+      <td class="registration-summary-cell">
         <div class="registration-status ${
           checked === tickets.length && tickets.length
             ? "complete"
@@ -913,7 +982,7 @@ function render() {
         </div>
       </td>
 
-      <td>
+      <td class="credential-actions-cell">
         <button class="delete-btn" data-delete="${itemIndex}" title="Excluir cadastro">
           <i class="fa-solid fa-trash"></i>
         </button>
@@ -1414,11 +1483,10 @@ function csvCell(value) {
 
 function exportCsv() {
   const rows = [[
+    "Código do convite",
+    "Tipo",
     "Nome",
     "CPF completo",
-    "Código do convite resgatado",
-    "Acompanhantes",
-    "Total de pessoas",
     "Código do ingresso",
     "Número",
     "Status",
@@ -1428,15 +1496,16 @@ function exportCsv() {
 
   inscricoes.forEach(item => {
     const tickets = normalizeTickets(item);
-    const acompanhantes = Number(item.acompanhantes || Math.max(0, tickets.length - 1));
+    const participants = normalizeParticipants(item);
 
-    tickets.forEach(ticket => {
+    tickets.forEach((ticket, index) => {
+      const person = participants[index] || {};
+
       rows.push([
-        item.nome,
-        formatCpf(item),
         item.inviteCode || "",
-        acompanhantes,
-        tickets.length,
+        person.role || (index === 0 ? "TITULAR" : "ACOMPANHANTE"),
+        person.nome || (index === 0 ? item.nome : ""),
+        formatCpf(person.cpf || person.cpfLast4 ? person : (index === 0 ? item : {})),
         ticket.codigo,
         ticket.numero,
         ticket.presente ? "Presente" : "Pendente",
@@ -1459,14 +1528,14 @@ function exportCsv() {
 
   link.href = url;
   link.download =
-    `convidados-noite-no-cinema-${new Date().toISOString().slice(0, 10)}.csv`;
+    `credenciamento-noite-no-cinema-${new Date().toISOString().slice(0, 10)}.csv`;
 
   document.body.appendChild(link);
   link.click();
   link.remove();
 
   URL.revokeObjectURL(url);
-  showAdminToast("Lista exportada em CSV.");
+  showAdminToast("Credenciamento exportado em CSV.");
 }
 
 // ============================================================
