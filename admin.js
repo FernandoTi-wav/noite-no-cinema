@@ -70,6 +70,7 @@ let inviteCodes = [];
 let inviteLoaded = false;
 let inviteLoading = false;
 let inviteEditingCode = "";
+let pendingInviteCreateRequestId = "";
 const INVITE_SNAPSHOT_KEY = "cinemaInviteCodesSnapshot";
 
 
@@ -498,7 +499,7 @@ async function confirmarExclusao() {
           token: getAdminToken(),
           code
         },
-        { timeoutMs: 12000, retries: 1 }
+        { timeoutMs: 30000, retries: 0 }
       );
 
       inviteCodes = inviteCodes.filter(item => item.code !== code);
@@ -1152,7 +1153,7 @@ async function carregarCodigosConvite({ force = false, silent = false } = {}) {
     const result = await sheetsRequest(
       "adminInviteList",
       { token: getAdminToken() },
-      { timeoutMs: 12000, retries: 1 }
+      { timeoutMs: 20000, retries: 1 }
     );
 
     inviteCodes = result.codes || [];
@@ -1229,6 +1230,7 @@ function abrirEditorConvite(code = "") {
       '<i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES';
   } else {
     inviteEditingCode = "";
+    pendingInviteCreateRequestId = "";
     inviteEditorKicker.textContent = "NOVO CONVITE";
     inviteEditorTitle.textContent = "CRIAR CÓDIGO";
     inviteCodeInput.value = "";
@@ -1251,6 +1253,7 @@ function abrirEditorConvite(code = "") {
 
 function fecharEditorConvite() {
   inviteEditingCode = "";
+  pendingInviteCreateRequestId = "";
   inviteEditor.classList.add("hidden");
   inviteCodeInput.disabled = false;
   inviteCompanionsInput.disabled = false;
@@ -1285,28 +1288,46 @@ async function salvarCodigoConvite() {
           active: inviteActiveInput.checked,
           note
         },
-        { timeoutMs: 12000, retries: 1 }
+        // Escritas não são repetidas automaticamente para evitar ações duplicadas.
+        { timeoutMs: 30000, retries: 0 }
       );
 
       showAdminToast(`Código ${inviteEditingCode} atualizado.`);
     } else {
+      if (!pendingInviteCreateRequestId) {
+        pendingInviteCreateRequestId =
+          crypto.randomUUID?.() ||
+          `invite-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+
+      const requestId = pendingInviteCreateRequestId;
+
       const result = await sheetsRequest(
         "adminInviteCreate",
         {
           token: getAdminToken(),
           code,
           companions,
-          note
+          note,
+          requestId
         },
-        { timeoutMs: 12000, retries: 1 }
+        // Apps Script pode terminar a gravação mesmo se o navegador perder
+        // a resposta. Um timeout maior + requestId evita códigos duplicados.
+        { timeoutMs: 30000, retries: 0 }
       );
 
+      pendingInviteCreateRequestId = "";
       showAdminToast(`Código ${result.code} criado e pronto para envio.`);
     }
 
     fecharEditorConvite();
     inviteLoaded = false;
-    await carregarCodigosConvite({ force: true });
+
+    // Atualizar a lista é uma leitura separada. Se ela falhar, não tratamos
+    // o salvamento como falha: o código já foi persistido.
+    try {
+      await carregarCodigosConvite({ force: true, silent: true });
+    } catch (_) {}
   } catch (error) {
     console.error(error);
 
@@ -1319,6 +1340,7 @@ async function salvarCodigoConvite() {
     const message = String(error?.message || "");
 
     if (message.includes("INVITE_CODE_ALREADY_EXISTS")) {
+      pendingInviteCreateRequestId = "";
       showAdminToast("Esse código já existe.", true);
     } else if (message.includes("INVITE_CODE_REDEEMED_LOCKED")) {
       showAdminToast(
@@ -1327,7 +1349,17 @@ async function salvarCodigoConvite() {
       );
     } else if (message.includes("UNKNOWN_ACTION")) {
       showAdminToast(
-        "Publique o Code.gs V19 no Apps Script antes de usar esta função.",
+        "Publique o Code.gs V19.2 no Apps Script antes de usar esta função.",
+        true
+      );
+    } else if (
+      message.includes("REQUEST_TIMEOUT") ||
+      message.includes("NETWORK_ERROR")
+    ) {
+      // Mantemos o mesmo requestId. Se a gravação já ocorreu no servidor,
+      // clicar novamente apenas devolve o mesmo código em vez de criar outro.
+      showAdminToast(
+        "O servidor demorou para responder. Clique em CRIAR CÓDIGO novamente; não será duplicado.",
         true
       );
     } else {
