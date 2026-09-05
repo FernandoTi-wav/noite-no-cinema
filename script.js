@@ -14,9 +14,12 @@ const $ = selector => document.querySelector(selector);
 
 const cinemaIntro = $("#cinemaIntro");
 const ticketForm = $("#ticketForm");
-const nomeInput = $("#nome");
-const cpfInput = $("#cpf");
 const inviteCodeInput = $("#inviteCode");
+const validateInviteButton = $("#validateInviteButton");
+const inviteValidationStatus = $("#inviteValidationStatus");
+const peopleStep = $("#peopleStep");
+const inviteReleaseSummary = $("#inviteReleaseSummary");
+const attendeeFields = $("#attendeeFields");
 const ticketPlaceholder = $("#ticketPlaceholder");
 const ticketResults = $("#ticketResults");
 const generateButton = $("#generateButton");
@@ -38,6 +41,7 @@ const whatsappFloating = $("#whatsappFloating");
 
 let ticketBaseImage = null;
 let cadastroEmAndamento = false;
+let validatedInvite = null;
 
 function sheetsConfigurado() {
   const url = String(window.APP_CONFIG?.webAppUrl || '').trim();
@@ -178,19 +182,34 @@ function warmAdminBackend() {
   return adminWarmupPromise;
 }
 
-function recentRegistrationKey(cpf) {
-  return `cinemaRecentRegistration:${cpfSomenteNumeros(cpf)}`;
+function recentRegistrationKey(inviteCode) {
+  return `cinemaRecentInvite:${String(inviteCode || "")
+    .trim()
+    .toUpperCase()}`;
 }
 
-function saveRecentRegistration(cpf, inscricao) {
+function saveRecentRegistration(inviteCode, inscricao) {
   try {
-    localStorage.setItem(recentRegistrationKey(cpf), JSON.stringify(inscricao));
+    const safeCopy = {
+      inviteCode: inscricao.inviteCode,
+      acompanhantes: inscricao.acompanhantes,
+      quantidade: inscricao.quantidade,
+      tickets: inscricao.tickets || [],
+      criadoEm: inscricao.criadoEm
+    };
+
+    localStorage.setItem(
+      recentRegistrationKey(inviteCode),
+      JSON.stringify(safeCopy)
+    );
   } catch (_) {}
 }
 
-function getRecentRegistration(cpf) {
+function getRecentRegistration(inviteCode) {
   try {
-    return JSON.parse(localStorage.getItem(recentRegistrationKey(cpf)));
+    return JSON.parse(
+      localStorage.getItem(recentRegistrationKey(inviteCode)) || "null"
+    );
   } catch (_) {
     return null;
   }
@@ -210,6 +229,8 @@ function friendlySheetsError(error) {
   if (message.includes('INVITE_CODE_ALREADY_REDEEMED')) return 'Este código de convite já foi resgatado.';
   if (message.includes('INVITE_CODE_DUPLICATED_CONFIG')) return 'Este código está duplicado na planilha. Avise a organização do evento.';
   if (message.includes('INVITE_CODE_INVALID_COMPANIONS')) return 'Este convite está com a quantidade de acompanhantes configurada incorretamente.';
+  if (message.includes('ATTENDEE_COUNT_MISMATCH')) return 'A quantidade de pessoas informadas não corresponde ao convite.';
+  if (message.includes('CPF_DUPLICATED_IN_INVITE')) return 'O mesmo CPF foi informado para mais de uma pessoa neste convite.';
   if (message.includes('INVALID_QUANTITY')) return 'A quantidade liberada para este convite não é válida.';
   if (message.includes('RUN_SETUP_FIRST')) return 'O sistema ainda não foi preparado corretamente.';
   if (message.includes('NETWORK_OFFLINE')) return 'Você está sem internet. Reconecte e tente novamente.';
@@ -288,10 +309,10 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll(".reveal-section").forEach(element => observer.observe(element));
 
 // ------------------------------------------------------------
-// CPF
+// CPF / código do convite
 // ------------------------------------------------------------
-cpfInput.addEventListener("input", function () {
-  let value = this.value.replace(/\D/g, "").substring(0, 11);
+function formatarCpfInput(input) {
+  let value = input.value.replace(/\D/g, "").substring(0, 11);
 
   if (value.length > 9) {
     value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, "$1.$2.$3-$4");
@@ -301,7 +322,15 @@ cpfInput.addEventListener("input", function () {
     value = value.replace(/^(\d{3})(\d+)/, "$1.$2");
   }
 
-  this.value = value;
+  input.value = value;
+}
+
+document.addEventListener("input", event => {
+  const target = event.target;
+
+  if (target?.classList?.contains("attendee-cpf")) {
+    formatarCpfInput(target);
+  }
 });
 
 inviteCodeInput.addEventListener("input", function () {
@@ -310,6 +339,13 @@ inviteCodeInput.addEventListener("input", function () {
     .replace(/\s+/g, "")
     .replace(/[^A-Z0-9_-]/g, "")
     .slice(0, 40);
+
+  if (
+    validatedInvite &&
+    this.value.trim().toUpperCase() !== validatedInvite.code
+  ) {
+    resetInviteValidation(false);
+  }
 });
 
 function cpfSomenteNumeros(cpf) {
@@ -520,7 +556,7 @@ async function renderizarIngressos(inscricao) {
       <small>INGRESSOS GERADOS</small>
       <h3>${inscricao.tickets.length === 1 ? "SEU INGRESSO ESTÁ PRONTO" : `${inscricao.tickets.length} INGRESSOS ESTÃO PRONTOS`}</h3>
     </div>
-    <button type="button" id="backToForm"><i class="fa-solid fa-pen"></i> ALTERAR DADOS</button>
+    <button type="button" id="backToForm"><i class="fa-solid fa-rotate-left"></i> NOVO CADASTRO</button>
   `;
   ticketResults.appendChild(header);
 
@@ -567,7 +603,8 @@ async function renderizarIngressos(inscricao) {
     ticketResults.classList.add("hidden");
     ticketResults.innerHTML = "";
     ticketPlaceholder.classList.remove("hidden");
-    nomeInput.focus();
+    resetInviteValidation(true);
+    inviteCodeInput.focus();
   });
 
   ticketResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -658,6 +695,165 @@ function abrirImagem(dataUrl) {
 }
 
 
+function attendeeLabel(index) {
+  return index === 0 ? "CONVIDADO PRINCIPAL" : `ACOMPANHANTE ${index}`;
+}
+
+function renderAttendeeFields(quantity) {
+  attendeeFields.innerHTML = "";
+
+  for (let index = 0; index < quantity; index++) {
+    const card = document.createElement("section");
+    card.className = "attendee-card";
+    card.dataset.attendee = String(index);
+
+    card.innerHTML = `
+      <div class="attendee-card-heading">
+        <span class="attendee-order">${index + 1}</span>
+        <div>
+          <small>${index === 0 ? "TITULAR DO CONVITE" : "ACOMPANHANTE"}</small>
+          <strong>${attendeeLabel(index)}</strong>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>NOME COMPLETO</span>
+        <div class="field-control">
+          <i class="fa-regular fa-user"></i>
+          <input
+            class="attendee-name"
+            type="text"
+            autocomplete="name"
+            maxlength="120"
+            placeholder="Digite o nome completo"
+            required
+          >
+        </div>
+      </label>
+
+      <label class="field">
+        <span>CPF</span>
+        <div class="field-control">
+          <i class="fa-regular fa-id-card"></i>
+          <input
+            class="attendee-cpf"
+            type="text"
+            inputmode="numeric"
+            maxlength="14"
+            placeholder="000.000.000-00"
+            required
+          >
+        </div>
+      </label>
+    `;
+
+    attendeeFields.appendChild(card);
+  }
+}
+
+function collectAttendees() {
+  return [...attendeeFields.querySelectorAll(".attendee-card")].map(card => ({
+    name: card.querySelector(".attendee-name").value.trim(),
+    cpf: cpfSomenteNumeros(card.querySelector(".attendee-cpf").value)
+  }));
+}
+
+function resetInviteValidation(clearCode = true) {
+  validatedInvite = null;
+  peopleStep.classList.add("hidden");
+  inviteValidationStatus.classList.add("hidden");
+  inviteValidationStatus.innerHTML = "";
+  attendeeFields.innerHTML = "";
+  inviteReleaseSummary.innerHTML = "";
+
+  inviteCodeInput.disabled = false;
+  validateInviteButton.disabled = false;
+  validateInviteButton.classList.remove("validated");
+  validateInviteButton.innerHTML =
+    '<i class="fa-solid fa-ticket"></i><span>VALIDAR CONVITE</span>';
+
+  if (clearCode) {
+    inviteCodeInput.value = "";
+  }
+}
+
+async function validarCodigoConvite() {
+  const inviteCode = inviteCodeInput.value.trim().toUpperCase();
+
+  if (!inviteCode) {
+    mostrarToast("Digite o código do convite recebido.", true);
+    inviteCodeInput.focus();
+    return;
+  }
+
+  if (!sheetsConfigurado()) {
+    mostrarToast("O sistema de convites não está conectado ao servidor.", true);
+    return;
+  }
+
+  if (validatedInvite?.code === inviteCode) {
+    resetInviteValidation(false);
+    inviteCodeInput.focus();
+    return;
+  }
+
+  validateInviteButton.disabled = true;
+  const original = validateInviteButton.innerHTML;
+  validateInviteButton.innerHTML =
+    '<i class="fa-solid fa-spinner fa-spin"></i><span>VALIDANDO...</span>';
+
+  try {
+    const result = await sheetsRequest(
+      "validateInvite",
+      { inviteCode },
+      { timeoutMs: 18000, retries: 1 }
+    );
+
+    validatedInvite = {
+      code: result.invite.code,
+      companions: Number(result.invite.companions || 0),
+      quantity: Number(result.invite.quantity || 1)
+    };
+
+    inviteCodeInput.value = validatedInvite.code;
+    inviteCodeInput.disabled = true;
+
+    inviteValidationStatus.classList.remove("hidden");
+    inviteValidationStatus.innerHTML = `
+      <i class="fa-solid fa-circle-check"></i>
+      <div>
+        <strong>CONVITE VÁLIDO</strong>
+        <span>${validatedInvite.quantity} ${validatedInvite.quantity === 1 ? "pessoa liberada" : "pessoas liberadas"}</span>
+      </div>
+    `;
+
+    inviteReleaseSummary.innerHTML = validatedInvite.companions > 0
+      ? `Este código libera <strong>1 convidado principal + ${validatedInvite.companions} ${validatedInvite.companions === 1 ? "acompanhante" : "acompanhantes"}</strong>. Preencha os dados de todas as pessoas abaixo.`
+      : "Este código libera <strong>somente o convidado principal</strong>.";
+
+    renderAttendeeFields(validatedInvite.quantity);
+    peopleStep.classList.remove("hidden");
+
+    validateInviteButton.classList.add("validated");
+    validateInviteButton.innerHTML =
+      '<i class="fa-solid fa-pen"></i><span>TROCAR CÓDIGO</span>';
+    validateInviteButton.disabled = false;
+
+    setTimeout(() => {
+      attendeeFields.querySelector(".attendee-name")?.focus();
+    }, 120);
+
+    peopleStep.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    validatedInvite = null;
+    mostrarToast(friendlySheetsError(error), true);
+    validateInviteButton.disabled = false;
+    validateInviteButton.innerHTML = original;
+  }
+}
+
+validateInviteButton.addEventListener("click", validarCodigoConvite);
+
 function pluralizarIngresso(qtd) {
   return `${qtd} ${qtd === 1 ? "ingresso confirmado" : "ingressos confirmados"}`;
 }
@@ -700,83 +896,123 @@ ticketForm.addEventListener("submit", async event => {
     return;
   }
 
-  const nome = nomeInput.value.trim();
-  const cpf = cpfSomenteNumeros(cpfInput.value);
-  const inviteCode = inviteCodeInput.value.trim().toUpperCase();
+  if (!validatedInvite) {
+    mostrarToast("Valide primeiro o código do convite.", true);
+    inviteCodeInput.focus();
+    return;
+  }
 
-  if (!nomeValido(nome) || !cpfValido(cpf) || !inviteCode) {
-    mostrarToast("Confira o nome, informe um CPF válido e digite o código do convite.", true);
+  const attendees = collectAttendees();
+
+  if (attendees.length !== validatedInvite.quantity) {
+    mostrarToast("A quantidade de pessoas não corresponde ao convite.", true);
+    return;
+  }
+
+  const invalidIndex = attendees.findIndex(
+    person => !nomeValido(person.name) || !cpfValido(person.cpf)
+  );
+
+  if (invalidIndex >= 0) {
+    const card = attendeeFields.querySelectorAll(".attendee-card")[invalidIndex];
+    mostrarToast(
+      `Confira o nome e o CPF de ${attendeeLabel(invalidIndex).toLowerCase()}.`,
+      true
+    );
+    card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  const uniqueCpfs = new Set(attendees.map(person => person.cpf));
+
+  if (uniqueCpfs.size !== attendees.length) {
+    mostrarToast("Cada pessoa deve informar um CPF diferente.", true);
     return;
   }
 
   if (typeof JsBarcode === "undefined") {
-    mostrarToast("Não foi possível carregar o gerador de código de barras. Verifique sua internet.", true);
+    mostrarToast(
+      "Não foi possível carregar o gerador de código de barras. Verifique sua internet.",
+      true
+    );
     return;
   }
 
+  const inviteCode = validatedInvite.code;
   const buttonContent = generateButton.querySelector(".button-content");
   const originalButton = buttonContent.innerHTML;
+
   cadastroEmAndamento = true;
   generateButton.disabled = true;
-  buttonContent.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> FINALIZANDO CADASTRO';
+  buttonContent.innerHTML =
+    '<i class="fa-solid fa-spinner fa-spin"></i> FINALIZANDO CADASTRO';
 
   try {
-    // ======================================================
-    // GOOGLE SHEETS + APPS SCRIPT
-    // ======================================================
-    if (sheetsConfigurado()) {
-      try {
-        const result = await sheetsRequest('register', {
-          name: nome,
-          cpf,
-          inviteCode
-        });
-
-        const inscricao = result.registration;
-        const quantidade = Number(inscricao.quantidade || inscricao.tickets?.length || 1);
-        saveRecentRegistration(cpf, inscricao);
-
-        await mostrarPopupCadastro({
-          kicker: "CONVITE RESGATADO",
-          title: "TUDO CERTO!",
-          text: inscricao.acompanhantes > 0
-            ? `Seu código foi validado para você e ${inscricao.acompanhantes} ${inscricao.acompanhantes === 1 ? "acompanhante" : "acompanhantes"}. Agora vamos exibir os ingressos VIP.`
-            : "Seu código foi validado. Agora vamos exibir o seu ingresso VIP.",
-          quantidade
-        });
-
-        await renderizarIngressos(inscricao);
-        mostrarToast(quantidade === 1 ? "Convite resgatado e ingresso emitido!" : `Convite resgatado e ${quantidade} ingressos emitidos!`);
-        return;
-      } catch (error) {
-        const message = String(error?.message || '');
-
-        if (message.includes('CPF_ALREADY_REGISTERED')) {
-          const recente = getRecentRegistration(cpf);
-
-          if (recente?.tickets?.length) {
-            await mostrarPopupCadastro({
-              kicker: "CADASTRO LOCALIZADO",
-              title: "INGRESSOS JÁ EMITIDOS",
-              text: "Este navegador ainda possui os ingressos emitidos anteriormente. Vamos exibi-los novamente.",
-              quantidade: recente.tickets.length
-            });
-
-            await renderizarIngressos(recente);
-            return;
-          }
-        }
-
-        mostrarToast(friendlySheetsError(error), true);
-        return;
-      }
+    if (!sheetsConfigurado()) {
+      mostrarToast(
+        "O sistema de códigos de convite precisa estar conectado ao Google Sheets.",
+        true
+      );
+      return;
     }
 
-    // ======================================================
-    // SEM BACKEND CONFIGURADO
-    // ======================================================
-    mostrarToast("O sistema de códigos de convite precisa estar conectado ao Google Sheets.", true);
-    return;
+    try {
+      const result = await sheetsRequest(
+        "register",
+        {
+          inviteCode,
+          attendees
+        },
+        { timeoutMs: 30000, retries: 0 }
+      );
+
+      const inscricao = result.registration;
+      const quantidade = Number(
+        inscricao.quantidade ||
+        inscricao.tickets?.length ||
+        attendees.length
+      );
+
+      saveRecentRegistration(inviteCode, inscricao);
+
+      await mostrarPopupCadastro({
+        kicker: "CREDENCIAMENTO CONCLUÍDO",
+        title: "TUDO CERTO!",
+        text: quantidade === 1
+          ? "Os dados do convidado foram confirmados. Agora vamos exibir o ingresso VIP."
+          : `Os dados das ${quantidade} pessoas foram confirmados. Agora vamos exibir os ingressos VIP.`,
+        quantidade
+      });
+
+      await renderizarIngressos(inscricao);
+      mostrarToast(
+        quantidade === 1
+          ? "Convite resgatado e ingresso emitido!"
+          : `Convite resgatado e ${quantidade} ingressos emitidos!`
+      );
+      return;
+    } catch (error) {
+      const message = String(error?.message || "");
+
+      if (message.includes("INVITE_CODE_ALREADY_REDEEMED")) {
+        const recente = getRecentRegistration(inviteCode);
+
+        if (recente?.tickets?.length) {
+          await mostrarPopupCadastro({
+            kicker: "INGRESSOS LOCALIZADOS",
+            title: "JÁ ESTÁ TUDO CERTO!",
+            text: "Este navegador possui uma cópia dos ingressos emitidos anteriormente para este convite.",
+            quantidade: recente.tickets.length
+          });
+
+          await renderizarIngressos(recente);
+          return;
+        }
+      }
+
+      mostrarToast(friendlySheetsError(error), true);
+      return;
+    }
   } catch (error) {
     console.error(error);
     mostrarToast("Não foi possível concluir o cadastro. Tente novamente.", true);
