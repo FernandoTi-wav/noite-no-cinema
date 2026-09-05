@@ -63,7 +63,7 @@ function getAdminToken() {
 }
 
 function clearAdminToken() {
-  clearAdminToken();
+  sessionStorage.removeItem("cinemaAdminToken");
   localStorage.removeItem("cinemaAdminToken");
 }
 
