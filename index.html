@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Bebas+Neue&family=Great+Vibes&family=Limelight&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=18.1.0">
+  <link rel="stylesheet" href="style.css?v=18.2.0">
 </head>
 <body>
 
@@ -158,29 +158,32 @@
               </label>
 
               <label class="field">
-                <span>QUANTIDADE DE INGRESSOS</span>
-                <div class="field-control">
-                  <i class="fa-solid fa-ticket-simple"></i>
-                  <select id="quantidade" required>
-                    <option value="">Selecione</option>
-                    <option value="1">1 ingresso</option>
-                    <option value="2">2 ingressos</option>
-                    <option value="3">3 ingressos</option>
-                    <option value="4">4 ingressos</option>
-                  </select>
-                  <i class="fa-solid fa-chevron-down select-arrow"></i>
+                <span>CÓDIGO DO CONVITE</span>
+                <div class="field-control invite-code-control">
+                  <i class="fa-solid fa-key"></i>
+                  <input
+                    id="inviteCode"
+                    type="text"
+                    maxlength="40"
+                    autocomplete="off"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    placeholder="Ex.: CLAUREA-AB12CD"
+                    required
+                  >
                 </div>
+                <small class="field-helper">O código recebido define automaticamente quantos acompanhantes estão incluídos.</small>
               </label>
 
               <button type="submit" class="primary-button" id="generateButton">
                 <span class="button-glow"></span>
-                <span class="button-content"><i class="fa-solid fa-user-check"></i> FAZER CADASTRO</span>
+                <span class="button-content"><i class="fa-solid fa-ticket"></i> RESGATAR CONVITE</span>
               </button>
             </form>
 
             <div class="print-hint">
               <i class="fa-solid fa-print"></i>
-              <p>Depois de gerar, você poderá <strong>baixar em PNG</strong> ou <strong>imprimir em A4 paisagem</strong> para levar no dia da festa.</p>
+              <p>Digite o <strong>código enviado pela anfitriã</strong>. A quantidade de ingressos será liberada automaticamente conforme o convite.</p>
             </div>
           </aside>
 
@@ -284,7 +287,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
   <!-- Google Sheets + Apps Script -->
-  <script src="apps-script-config.js?v=15.0.0"></script>
-  <script src="script.js?v=15.0.0"></script>
+  <script src="apps-script-config.js?v=18.2.0"></script>
+  <script src="script.js?v=18.2.0"></script>
 </body>
 </html>
