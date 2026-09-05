@@ -63,7 +63,29 @@ function getClientId() {
   return value;
 }
 
-async function sheetsRequest(action, payload = {}) {
+function getStoredAdminToken() {
+  return (
+    sessionStorage.getItem("cinemaAdminToken") ||
+    localStorage.getItem("cinemaAdminToken") ||
+    ""
+  );
+}
+
+function saveAdminToken(token) {
+  sessionStorage.setItem("cinemaAdminToken", token);
+  localStorage.setItem("cinemaAdminToken", token);
+}
+
+function clearAdminToken() {
+  sessionStorage.removeItem("cinemaAdminToken");
+  localStorage.removeItem("cinemaAdminToken");
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function sheetsRequest(action, payload = {}, options = {}) {
   if (!sheetsConfigurado()) {
     throw new Error("SHEETS_NOT_CONFIGURED");
   }
@@ -72,51 +94,88 @@ async function sheetsRequest(action, payload = {}) {
     throw new Error("NETWORK_OFFLINE");
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 18000);
+  const timeoutMs = Number(options.timeoutMs || 18000);
+  const retries = Math.max(0, Number(options.retries || 0));
 
-  try {
-    const response = await fetch(getWebAppUrl(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      redirect: "follow",
-      signal: controller.signal,
-      body: JSON.stringify({ action, ...payload })
-    });
-
-    if (!response.ok) {
-      throw new Error("HTTP_" + response.status);
-    }
-
-    const text = await response.text();
-    let data;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      data = JSON.parse(text);
-    } catch (_) {
-      throw new Error("INVALID_APPS_SCRIPT_RESPONSE");
-    }
+      const response = await fetch(getWebAppUrl(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        redirect: "follow",
+        cache: "no-store",
+        signal: controller.signal,
+        body: JSON.stringify({ action, ...payload })
+      });
 
-    if (!data.ok) {
-      throw new Error(data.error || "APPS_SCRIPT_ERROR");
-    }
+      if (!response.ok) {
+        throw new Error("HTTP_" + response.status);
+      }
 
-    return data;
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      throw new Error("REQUEST_TIMEOUT");
-    }
+      const text = await response.text();
+      let data;
 
-    if (error instanceof TypeError) {
-      throw new Error("NETWORK_ERROR");
-    }
+      try {
+        data = JSON.parse(text);
+      } catch (_) {
+        throw new Error("INVALID_APPS_SCRIPT_RESPONSE");
+      }
 
-    throw error;
-  } finally {
-    clearTimeout(timeout);
+      if (!data.ok) {
+        throw new Error(data.error || "APPS_SCRIPT_ERROR");
+      }
+
+      return data;
+    } catch (error) {
+      const normalized =
+        error?.name === "AbortError"
+          ? new Error("REQUEST_TIMEOUT")
+          : error instanceof TypeError
+            ? new Error("NETWORK_ERROR")
+            : error;
+
+      const retryable =
+        normalized.message === "REQUEST_TIMEOUT" ||
+        normalized.message === "NETWORK_ERROR" ||
+        /^HTTP_5\d\d$/.test(normalized.message);
+
+      if (attempt < retries && retryable) {
+        await wait(350 + attempt * 350);
+        continue;
+      }
+
+      throw normalized;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+}
+
+let adminWarmupPromise = null;
+
+function warmAdminBackend() {
+  if (!sheetsConfigurado() || !navigator.onLine) return Promise.resolve();
+
+  if (!adminWarmupPromise) {
+    adminWarmupPromise = sheetsRequest(
+      "health",
+      {},
+      { timeoutMs: 7000, retries: 0 }
+    )
+      .catch(() => null)
+      .finally(() => {
+        setTimeout(() => {
+          adminWarmupPromise = null;
+        }, 8000);
+      });
+  }
+
+  return adminWarmupPromise;
 }
 
 function recentRegistrationKey(cpf) {
@@ -743,7 +802,16 @@ whatsappFloating.addEventListener("click", abrirWhatsApp);
 // Admin
 // ------------------------------------------------------------
 adminButton.addEventListener("click", () => {
+  const existingToken = getStoredAdminToken();
+
+  if (existingToken) {
+    sessionStorage.setItem("cinemaAdminToken", existingToken);
+    window.location.href = "admin.html";
+    return;
+  }
+
   adminModal.classList.add("active");
+  warmAdminBackend();
   setTimeout(() => adminPassword.focus(), 180);
 });
 
@@ -767,30 +835,38 @@ async function verificarAdmin() {
   }
 
   loginAdmin.disabled = true;
+  const originalLoginHtml = loginAdmin.innerHTML;
+  loginAdmin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ACESSANDO...';
 
   try {
     if (sheetsConfigurado()) {
-      const result = await sheetsRequest('adminLogin', { password, clientId: getClientId() });
-      sessionStorage.setItem('cinemaAdminToken', result.token);
-      window.location.href = 'admin.html';
+      await warmAdminBackend();
+
+      const result = await sheetsRequest(
+        "adminLogin",
+        { password, clientId: getClientId() },
+        { timeoutMs: 12000, retries: 1 }
+      );
+
+      saveAdminToken(result.token);
+      window.location.href = "admin.html";
       return;
     }
 
     // Fallback apenas para testes locais.
     if (password === CONFIG.adminPassword) {
-      sessionStorage.setItem('cinemaAdmin', 'ok');
-      window.location.href = 'admin.html';
+      sessionStorage.setItem("cinemaAdmin", "ok");
+      window.location.href = "admin.html";
       return;
     }
 
-    throw new Error('INVALID_ADMIN_PASSWORD');
+    throw new Error("INVALID_ADMIN_PASSWORD");
   } catch (error) {
     const message = String(error?.message || "");
-
-    adminPassword.value = "";
     adminPassword.parentElement.style.borderColor = "#a92325";
 
     if (message.includes("ADMIN_LOGIN_BLOCKED")) {
+      adminPassword.value = "";
       adminPassword.placeholder = "Aguarde alguns minutos";
       mostrarToast("Muitas tentativas incorretas. Aguarde 10 minutos antes de tentar novamente.", true);
     } else if (
@@ -798,9 +874,10 @@ async function verificarAdmin() {
       message.includes("NETWORK_ERROR") ||
       message.includes("REQUEST_TIMEOUT")
     ) {
-      adminPassword.placeholder = "Falha de conexão";
-      mostrarToast("Não foi possível acessar o servidor. Verifique sua internet.", true);
+      adminPassword.placeholder = "Tente novamente";
+      mostrarToast("O servidor demorou para responder. Tente novamente — a senha foi mantida.", true);
     } else {
+      adminPassword.value = "";
       adminPassword.placeholder = "Senha incorreta";
     }
 
@@ -810,6 +887,7 @@ async function verificarAdmin() {
     }, 2200);
   } finally {
     loginAdmin.disabled = false;
+    loginAdmin.innerHTML = originalLoginHtml;
   }
 }
 
