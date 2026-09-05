@@ -1021,3 +1021,204 @@ button,input,select{font:inherit}button{border:0}a{text-decoration:none;color:in
 /* =========================================================
    V12 — INDICADOR GOOGLE SHEETS / APPS SCRIPT
    ========================================================= */
+
+
+/* ============================================================
+   V20 — VALIDAÇÃO DO CONVITE + CREDENCIAIS INDIVIDUAIS
+   ============================================================ */
+
+.credential-flow{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.credential-step{
+  padding:16px;
+  border:1px solid rgba(218,165,60,.15);
+  border-radius:10px;
+  background:rgba(8,7,5,.54);
+}
+
+.credential-step-heading{
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.credential-step-number{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(218,165,60,.28);
+  border-radius:50%;
+  background:rgba(208,148,30,.06);
+  color:var(--gold-light);
+  font-family:var(--display);
+  font-size:15px;
+}
+
+.credential-step-heading small{
+  display:block;
+  color:#806b45;
+  font-family:var(--display);
+  font-size:10px;
+  letter-spacing:1.7px;
+}
+
+.credential-step-heading strong{
+  display:block;
+  margin-top:2px;
+  color:#d8b45f;
+  font-family:var(--display);
+  font-size:16px;
+  letter-spacing:1px;
+}
+
+.secondary-flow-button{
+  width:100%;
+  min-height:44px;
+  margin-top:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  border:1px solid rgba(218,165,60,.25);
+  border-radius:8px;
+  background:rgba(195,135,25,.055);
+  color:#d3aa50;
+  font-family:var(--display);
+  font-size:14px;
+  letter-spacing:1.1px;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.secondary-flow-button:hover{
+  border-color:rgba(239,190,83,.48);
+  color:var(--gold-light);
+}
+
+.secondary-flow-button.validated{
+  background:rgba(69,148,88,.055);
+  border-color:rgba(78,174,99,.25);
+  color:#88d39a;
+}
+
+.invite-validation-status{
+  margin-top:12px;
+  padding:11px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid rgba(65,170,91,.23);
+  border-radius:8px;
+  background:rgba(53,145,77,.055);
+  color:#7fd092;
+}
+
+.invite-validation-status>i{
+  font-size:18px;
+}
+
+.invite-validation-status strong,
+.invite-validation-status span{
+  display:block;
+}
+
+.invite-validation-status strong{
+  font-family:var(--display);
+  font-size:13px;
+  letter-spacing:1px;
+}
+
+.invite-validation-status span{
+  margin-top:1px;
+  color:#86a18c;
+  font-size:12px;
+}
+
+.invite-release-summary{
+  margin-bottom:13px;
+  padding:11px 12px;
+  border-left:2px solid rgba(218,165,60,.48);
+  background:rgba(214,157,40,.035);
+  color:#998c78;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.invite-release-summary strong{
+  color:#d7b25d;
+}
+
+.attendee-fields{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.attendee-card{
+  padding:14px;
+  border:1px solid rgba(218,165,60,.13);
+  border-radius:9px;
+  background:linear-gradient(145deg,rgba(11,9,6,.92),rgba(5,4,3,.88));
+}
+
+.attendee-card-heading{
+  margin-bottom:11px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.attendee-order{
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(213,154,34,.08);
+  color:#d6af55;
+  font-family:var(--display);
+}
+
+.attendee-card-heading small{
+  display:block;
+  font-family:var(--display);
+  font-size:9px;
+  letter-spacing:1.5px;
+  color:#746243;
+}
+
+.attendee-card-heading strong{
+  display:block;
+  margin-top:1px;
+  font-family:var(--display);
+  font-size:14px;
+  letter-spacing:.9px;
+  color:#c7a75f;
+}
+
+.attendee-card .field{
+  margin-bottom:10px;
+}
+
+.attendee-card .field:last-child{
+  margin-bottom:0;
+}
+
+@media(max-width:600px){
+  .credential-step{
+    padding:12px;
+  }
+
+  .attendee-card{
+    padding:12px;
+  }
+}
