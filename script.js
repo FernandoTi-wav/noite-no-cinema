@@ -16,7 +16,7 @@ const cinemaIntro = $("#cinemaIntro");
 const ticketForm = $("#ticketForm");
 const nomeInput = $("#nome");
 const cpfInput = $("#cpf");
-const quantidadeInput = $("#quantidade");
+const inviteCodeInput = $("#inviteCode");
 const ticketPlaceholder = $("#ticketPlaceholder");
 const ticketResults = $("#ticketResults");
 const generateButton = $("#generateButton");
@@ -145,7 +145,13 @@ function friendlySheetsError(error) {
   if (message.includes('REGISTRATION_CLOSED')) return 'As inscrições estão encerradas no momento.';
   if (message.includes('INVALID_CPF')) return 'O CPF informado não é válido.';
   if (message.includes('INVALID_NAME')) return 'Confira o nome completo informado.';
-  if (message.includes('INVALID_QUANTITY')) return 'A quantidade selecionada não é válida.';
+  if (message.includes('INVITE_CODE_REQUIRED')) return 'Informe o código do convite recebido.';
+  if (message.includes('INVITE_CODE_NOT_FOUND')) return 'Este código de convite não foi encontrado.';
+  if (message.includes('INVITE_CODE_INACTIVE')) return 'Este código de convite está desativado.';
+  if (message.includes('INVITE_CODE_ALREADY_REDEEMED')) return 'Este código de convite já foi resgatado.';
+  if (message.includes('INVITE_CODE_DUPLICATED_CONFIG')) return 'Este código está duplicado na planilha. Avise a organização do evento.';
+  if (message.includes('INVITE_CODE_INVALID_COMPANIONS')) return 'Este convite está com a quantidade de acompanhantes configurada incorretamente.';
+  if (message.includes('INVALID_QUANTITY')) return 'A quantidade liberada para este convite não é válida.';
   if (message.includes('RUN_SETUP_FIRST')) return 'O sistema ainda não foi preparado corretamente.';
   if (message.includes('NETWORK_OFFLINE')) return 'Você está sem internet. Reconecte e tente novamente.';
   if (message.includes('NETWORK_ERROR')) return 'Não foi possível acessar o servidor. Verifique sua conexão.';
@@ -237,6 +243,14 @@ cpfInput.addEventListener("input", function () {
   }
 
   this.value = value;
+});
+
+inviteCodeInput.addEventListener("input", function () {
+  this.value = this.value
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9_-]/g, "")
+    .slice(0, 40);
 });
 
 function cpfSomenteNumeros(cpf) {
@@ -629,10 +643,10 @@ ticketForm.addEventListener("submit", async event => {
 
   const nome = nomeInput.value.trim();
   const cpf = cpfSomenteNumeros(cpfInput.value);
-  const quantidade = Number(quantidadeInput.value);
+  const inviteCode = inviteCodeInput.value.trim().toUpperCase();
 
-  if (!nomeValido(nome) || !cpfValido(cpf) || !quantidade) {
-    mostrarToast("Confira o nome, informe um CPF válido e selecione a quantidade de ingressos.", true);
+  if (!nomeValido(nome) || !cpfValido(cpf) || !inviteCode) {
+    mostrarToast("Confira o nome, informe um CPF válido e digite o código do convite.", true);
     return;
   }
 
@@ -656,25 +670,55 @@ ticketForm.addEventListener("submit", async event => {
         const result = await sheetsRequest('register', {
           name: nome,
           cpf,
-          quantity: quantidade
+          inviteCode
         });
 
         const inscricao = result.registration;
+        const quantidade = Number(inscricao.quantidade || inscricao.tickets?.length || 1);
         saveRecentRegistration(cpf, inscricao);
 
         await mostrarPopupCadastro({
-          kicker: "CADASTRO CONCLUÍDO",
+          kicker: "CONVITE RESGATADO",
           title: "TUDO CERTO!",
-          text: quantidade === 1
-            ? "Seu cadastro foi confirmado e salvo na lista. Agora vamos exibir o seu ingresso VIP."
-            : "Seu cadastro foi confirmado e salvo na lista. Agora vamos exibir os seus ingressos VIP.",
+          text: inscricao.acompanhantes > 0
+            ? `Seu código foi validado para você e ${inscricao.acompanhantes} ${inscricao.acompanhantes === 1 ? "acompanhante" : "acompanhantes"}. Agora vamos exibir os ingressos VIP.`
+            : "Seu código foi validado. Agora vamos exibir o seu ingresso VIP.",
           quantidade
         });
 
         await renderizarIngressos(inscricao);
-        mostrarToast(quantidade === 1 ? "Cadastro salvo e ingresso emitido!" : `Cadastro salvo e ${quantidade} ingressos emitidos!`);
+        mostrarToast(quantidade === 1 ? "Convite resgatado e ingresso emitido!" : `Convite resgatado e ${quantidade} ingressos emitidos!`);
         return;
       } catch (error) {
+        const message = String(error?.message || '');
+
+        if (message.includes('CPF_ALREADY_REGISTERED')) {
+          const recente = getRecentRegistration(cpf);
+
+          if (recente?.tickets?.length) {
+            await mostrarPopupCadastro({
+              kicker: "CADASTRO LOCALIZADO",
+              title: "INGRESSOS JÁ EMITIDOS",
+              text: "Este navegador ainda possui os ingressos emitidos anteriormente. Vamos exibi-los novamente.",
+              quantidade: recente.tickets.length
+            });
+
+            await renderizarIngressos(recente);
+            return;
+          }
+        }
+
+        mostrarToast(friendlySheetsError(error), true);
+        return;
+      }
+    }
+
+    // ======================================================
+    // SEM BACKEND CONFIGURADO
+    // ======================================================
+    mostrarToast("O sistema de códigos de convite precisa estar conectado ao Google Sheets.", true);
+    return;
+  } catch (error) {
         const message = String(error?.message || '');
 
         if (message.includes('CPF_ALREADY_REGISTERED')) {
