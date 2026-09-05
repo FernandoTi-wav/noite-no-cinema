@@ -1242,3 +1242,157 @@ button:disabled{
     grid-template-columns:1fr 1fr;
   }
 }
+
+
+/* ============================================================
+   V20 — CREDENCIAIS INDIVIDUAIS POR INGRESSO
+   ============================================================ */
+
+.attendee-ticket-list{
+  min-width:560px;
+  display:grid;
+  gap:7px;
+}
+
+.attendee-ticket-row{
+  display:grid;
+  grid-template-columns:minmax(190px,.9fr) minmax(360px,1.35fr);
+  align-items:center;
+  gap:10px;
+  padding:9px;
+  border:1px solid rgba(218,165,60,.10);
+  border-radius:8px;
+  background:rgba(8,7,5,.62);
+}
+
+.attendee-ticket-row.checked{
+  border-color:rgba(70,184,101,.16);
+  background:rgba(41,132,67,.035);
+}
+
+.attendee-identity{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+
+.attendee-role-badge{
+  margin-bottom:3px;
+  padding:3px 6px;
+  border:1px solid rgba(218,165,60,.14);
+  border-radius:4px;
+  background:rgba(218,165,60,.035);
+  color:#8f7749;
+  font-family:var(--display);
+  font-size:9px;
+  letter-spacing:1px;
+}
+
+.attendee-identity strong{
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#eee4d5;
+  font-family:var(--display);
+  font-size:14px;
+  letter-spacing:.55px;
+  white-space:nowrap;
+}
+
+.attendee-identity small{
+  margin-top:2px;
+  color:#8b8173;
+  font-family:var(--display);
+  font-size:12px;
+  letter-spacing:.4px;
+}
+
+.attendee-ticket-row .ticket-chip{
+  width:100%;
+  min-width:0;
+}
+
+@media(max-width:1200px){
+  .attendee-ticket-list{
+    min-width:470px;
+  }
+
+  .attendee-ticket-row{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:760px){
+  /* Estrutura V20: convite, código, acompanhantes, pessoas, data, resumo, excluir */
+  td:nth-child(2),
+  td:nth-child(3){
+    display:flex!important;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:5px;
+    padding:7px 0;
+    border-top:1px solid rgba(255,255,255,.035);
+  }
+
+  td:nth-child(2)::before,
+  td:nth-child(3)::before{
+    flex:0 0 auto;
+    font-family:var(--display);
+    font-size:11px;
+    letter-spacing:1.2px;
+    color:#746b5d;
+  }
+
+  td:nth-child(2)::before{content:"CONVITE"}
+  td:nth-child(3)::before{content:"ACOMP."}
+
+  td:nth-child(4){
+    display:block!important;
+    margin-top:7px;
+    padding:9px 0!important;
+    border-top:1px solid rgba(255,255,255,.045);
+  }
+
+  td:nth-child(4)::before{
+    content:"";
+    display:none;
+  }
+
+  td:nth-child(5){
+    display:none!important;
+  }
+
+  td:nth-child(6){
+    display:block!important;
+    margin-top:7px;
+    padding:7px 0!important;
+  }
+
+  td:nth-child(7){
+    display:block!important;
+    padding-top:8px!important;
+    text-align:right;
+  }
+
+  .attendee-ticket-list{
+    min-width:0;
+    width:100%;
+  }
+
+  .attendee-ticket-row{
+    width:100%;
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:10px;
+  }
+
+  .attendee-identity strong{
+    white-space:normal;
+  }
+
+  .attendee-ticket-row .ticket-chip{
+    padding:8px;
+  }
+}
