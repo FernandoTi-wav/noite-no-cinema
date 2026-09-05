@@ -147,15 +147,19 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function maskCpf(item) {
+function formatCpf(item) {
+  const d = cpfDigits(item.cpf);
+
+  if (d.length === 11) {
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  }
+
+  // Compatibilidade apenas com cadastros antigos, feitos antes da V18.
   if (item.cpfLast4) {
     return `***.***.***-${item.cpfLast4}`;
   }
 
-  const d = cpfDigits(item.cpf);
-  if (d.length !== 11) return item.cpf || "-";
-
-  return `***.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  return item.cpf || "-";
 }
 
 function formatDate(iso) {
@@ -675,6 +679,8 @@ function render() {
       item.nome,
       item.cpf,
       item.cpfLast4,
+      item.inviteCode,
+      item.acompanhantes,
       ...allCodes(item)
     ]
       .filter(Boolean)
@@ -694,13 +700,29 @@ function render() {
 
     const tr = document.createElement("tr");
 
+    const acompanhantes = Number(item.acompanhantes || Math.max(0, tickets.length - 1));
+
     tr.innerHTML = `
       <td class="guest-name">
         <strong>${escapeHtml(item.nome)}</strong>
-        <small>${tickets.length} ${tickets.length === 1 ? "ingresso" : "ingressos"}</small>
+        <small>${tickets.length} ${tickets.length === 1 ? "ingresso liberado" : "ingressos liberados"}</small>
       </td>
 
-      <td>${escapeHtml(maskCpf(item))}</td>
+      <td class="cpf-full">${escapeHtml(formatCpf(item))}</td>
+
+      <td>
+        <span class="invite-code-badge">
+          <i class="fa-solid fa-key"></i>
+          ${escapeHtml(item.inviteCode || "CADASTRO ANTIGO")}
+        </span>
+      </td>
+
+      <td>
+        <div class="companion-count">
+          <strong>${acompanhantes}</strong>
+          <span>${acompanhantes === 1 ? "ACOMPANHANTE" : "ACOMPANHANTES"}</span>
+        </div>
+      </td>
 
       <td>
         <div class="ticket-chip-list">
@@ -788,7 +810,10 @@ function csvCell(value) {
 function exportCsv() {
   const rows = [[
     "Nome",
-    "CPF mascarado",
+    "CPF completo",
+    "Código do convite resgatado",
+    "Acompanhantes",
+    "Total de pessoas",
     "Código do ingresso",
     "Número",
     "Status",
@@ -797,10 +822,16 @@ function exportCsv() {
   ]];
 
   inscricoes.forEach(item => {
-    normalizeTickets(item).forEach(ticket => {
+    const tickets = normalizeTickets(item);
+    const acompanhantes = Number(item.acompanhantes || Math.max(0, tickets.length - 1));
+
+    tickets.forEach(ticket => {
       rows.push([
         item.nome,
-        maskCpf(item),
+        formatCpf(item),
+        item.inviteCode || "",
+        acompanhantes,
+        tickets.length,
         ticket.codigo,
         ticket.numero,
         ticket.presente ? "Presente" : "Pendente",
