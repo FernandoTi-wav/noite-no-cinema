@@ -308,6 +308,53 @@ function normalizeTickets(item) {
   return item.tickets;
 }
 
+function normalizeParticipants(item) {
+  const tickets = normalizeTickets(item);
+
+  if (Array.isArray(item.participantes) && item.participantes.length) {
+    return tickets.map((ticket, ticketIndex) => {
+      const person =
+        item.participantes.find(entry =>
+          String(entry.ticketId || "") === String(ticket.id || "") ||
+          String(entry.ticketCodigo || "") === String(ticket.codigo || "")
+        ) ||
+        item.participantes[ticketIndex] ||
+        {};
+
+      return {
+        id: person.id || "",
+        role: person.role || (ticketIndex === 0 ? "TITULAR" : "ACOMPANHANTE"),
+        nome: person.nome || (ticketIndex === 0 ? item.nome : ""),
+        cpf: person.cpf || (ticketIndex === 0 ? item.cpf : ""),
+        cpfLast4: person.cpfLast4 || (ticketIndex === 0 ? item.cpfLast4 : ""),
+        ticket,
+        ticketIndex
+      };
+    });
+  }
+
+  return tickets.map((ticket, ticketIndex) => ({
+    id: "",
+    role: ticketIndex === 0 ? "TITULAR" : "ACOMPANHANTE",
+    nome: ticketIndex === 0 ? item.nome : "",
+    cpf: ticketIndex === 0 ? item.cpf : "",
+    cpfLast4: ticketIndex === 0 ? item.cpfLast4 : "",
+    ticket,
+    ticketIndex
+  }));
+}
+
+function participantForTicket(item, ticket, ticketIndex) {
+  return (
+    normalizeParticipants(item).find(entry =>
+      String(entry.ticket?.id || "") === String(ticket.id || "") ||
+      String(entry.ticket?.codigo || "") === String(ticket.codigo || "")
+    ) ||
+    normalizeParticipants(item)[ticketIndex] ||
+    null
+  );
+}
+
 function ticketCount(item) {
   return normalizeTickets(item).length;
 }
@@ -663,13 +710,21 @@ async function criarImagemIngressoAdmin(ticket, index, total) {
   return canvas.toDataURL("image/png");
 }
 
-async function abrirIngressoAdmin(itemIndex, ticketIndex, button) {
+async async function abrirIngressoAdmin(itemIndex, ticketIndex, button) {
   const item = inscricoes[itemIndex];
   const tickets = normalizeTickets(item);
   const ticket = tickets[ticketIndex];
+  const person = participantForTicket(item, ticket, ticketIndex);
 
   ticketAdminTitle.textContent = ticket.codigo;
-  ticketAdminGuest.textContent = `${item.nome} • ${maskCpf(item)}`;
+
+  if (person) {
+    const nome = String(person.nome || "").trim() || "Acompanhante";
+    ticketAdminGuest.textContent = `${nome} • ${formatCpf(person)}`;
+  } else {
+    ticketAdminGuest.textContent = item.nome || "Convidado";
+  }
+
   ticketAdminImage.removeAttribute("src");
   ticketAdminImage.classList.remove("ready");
   ticketAdminLoading.classList.remove("hidden");
@@ -794,36 +849,49 @@ function matchesStatus(item) {
   return true;
 }
 
-function ticketHtml(ticket, itemIndex, ticketIndex) {
+function ticketHtml(ticket, itemIndex, ticketIndex, person = null) {
   const checked = ticket.presente;
+  const displayName =
+    String(person?.nome || "").trim() ||
+    (ticketIndex === 0 ? "Convidado principal" : "Acompanhante não identificado");
+  const cpfText = person ? formatCpf(person) : "-";
+  const role = String(person?.role || (ticketIndex === 0 ? "TITULAR" : "ACOMPANHANTE"));
 
   return `
-    <div class="ticket-chip ${checked ? "checked" : ""}">
-      <div class="ticket-chip-code">
-        <i class="fa-solid fa-barcode"></i>
-        <span>${escapeHtml(ticket.codigo)}</span>
+    <div class="attendee-ticket-row ${checked ? "checked" : ""}">
+      <div class="attendee-identity">
+        <span class="attendee-role-badge">${escapeHtml(role)}</span>
+        <strong>${escapeHtml(displayName)}</strong>
+        <small>CPF: ${escapeHtml(cpfText)}</small>
       </div>
 
-      <div class="ticket-chip-actions">
-        <button
-          class="ticket-view-btn"
-          data-view-item="${itemIndex}"
-          data-view-ticket="${ticketIndex}"
-          title="Abrir, baixar ou imprimir ingresso"
-        >
-          <i class="fa-solid fa-ticket"></i>
-          INGRESSO
-        </button>
+      <div class="ticket-chip ${checked ? "checked" : ""}">
+        <div class="ticket-chip-code">
+          <i class="fa-solid fa-barcode"></i>
+          <span>${escapeHtml(ticket.codigo)}</span>
+        </div>
 
-        <button
-          class="ticket-check-btn ${checked ? "checked" : ""}"
-          data-item="${itemIndex}"
-          data-ticket="${ticketIndex}"
-          title="${checked ? "Desfazer check-in" : "Marcar presença"}"
-        >
-          <i class="fa-solid ${checked ? "fa-circle-check" : "fa-arrow-right-to-bracket"}"></i>
-          ${checked ? "PRESENTE" : "CHECK-IN"}
-        </button>
+        <div class="ticket-chip-actions">
+          <button
+            class="ticket-view-btn"
+            data-view-item="${itemIndex}"
+            data-view-ticket="${ticketIndex}"
+            title="Abrir, baixar ou imprimir ingresso"
+          >
+            <i class="fa-solid fa-ticket"></i>
+            INGRESSO
+          </button>
+
+          <button
+            class="ticket-check-btn ${checked ? "checked" : ""}"
+            data-item="${itemIndex}"
+            data-ticket="${ticketIndex}"
+            title="${checked ? "Desfazer check-in" : "Marcar presença"}"
+          >
+            <i class="fa-solid ${checked ? "fa-circle-check" : "fa-arrow-right-to-bracket"}"></i>
+            ${checked ? "PRESENTE" : "CHECK-IN"}
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -833,13 +901,21 @@ function render() {
   const term = searchInput.value.trim().toLowerCase();
 
   const filtered = inscricoes.filter(item => {
+    const participants = normalizeParticipants(item);
+
     const searchable = [
       item.nome,
       item.cpf,
       item.cpfLast4,
       item.inviteCode,
       item.acompanhantes,
-      ...allCodes(item)
+      ...allCodes(item),
+      ...participants.flatMap(person => [
+        person.nome,
+        person.cpf,
+        person.cpfLast4,
+        formatCpf(person)
+      ])
     ]
       .filter(Boolean)
       .join(" ")
@@ -854,19 +930,21 @@ function render() {
   filtered.forEach(item => {
     const itemIndex = inscricoes.indexOf(item);
     const tickets = normalizeTickets(item);
+    const participants = normalizeParticipants(item);
     const checked = checkedCount(item);
+    const acompanhantes = Number(
+      item.acompanhantes || Math.max(0, tickets.length - 1)
+    );
 
     const tr = document.createElement("tr");
-
-    const acompanhantes = Number(item.acompanhantes || Math.max(0, tickets.length - 1));
 
     tr.innerHTML = `
       <td class="guest-name">
         <strong>${escapeHtml(item.nome)}</strong>
-        <small>${tickets.length} ${tickets.length === 1 ? "ingresso liberado" : "ingressos liberados"}</small>
+        <small>
+          ${tickets.length} ${tickets.length === 1 ? "pessoa credenciada" : "pessoas credenciadas"}
+        </small>
       </td>
-
-      <td class="cpf-full">${escapeHtml(formatCpf(item))}</td>
 
       <td>
         <span class="invite-code-badge">
@@ -883,10 +961,15 @@ function render() {
       </td>
 
       <td>
-        <div class="ticket-chip-list">
-          ${tickets
-            .map((ticket, ticketIndex) =>
-              ticketHtml(ticket, itemIndex, ticketIndex)
+        <div class="attendee-ticket-list">
+          ${participants
+            .map(person =>
+              ticketHtml(
+                person.ticket,
+                itemIndex,
+                person.ticketIndex,
+                person
+              )
             )
             .join("")}
         </div>
@@ -949,10 +1032,6 @@ function render() {
     });
   });
 }
-
-// ============================================================
-// Gestão de códigos dos convites — carregamento sob demanda
-// ============================================================
 
 function saveInviteSnapshot() {
   try {
@@ -1414,9 +1493,11 @@ function csvCell(value) {
 
 function exportCsv() {
   const rows = [[
-    "Nome",
+    "Código do convite",
+    "Titular do convite",
+    "Tipo",
+    "Nome da pessoa",
     "CPF completo",
-    "Código do convite resgatado",
     "Acompanhantes",
     "Total de pessoas",
     "Código do ingresso",
@@ -1427,20 +1508,26 @@ function exportCsv() {
   ]];
 
   inscricoes.forEach(item => {
-    const tickets = normalizeTickets(item);
-    const acompanhantes = Number(item.acompanhantes || Math.max(0, tickets.length - 1));
+    const participants = normalizeParticipants(item);
+    const acompanhantes = Number(
+      item.acompanhantes || Math.max(0, participants.length - 1)
+    );
 
-    tickets.forEach(ticket => {
+    participants.forEach(person => {
+      const ticket = person.ticket;
+
       rows.push([
-        item.nome,
-        formatCpf(item),
         item.inviteCode || "",
+        item.nome || "",
+        person.role || "",
+        person.nome || "",
+        formatCpf(person),
         acompanhantes,
-        tickets.length,
-        ticket.codigo,
-        ticket.numero,
-        ticket.presente ? "Presente" : "Pendente",
-        ticket.checkInEm ? formatDate(ticket.checkInEm) : "",
+        participants.length,
+        ticket?.codigo || "",
+        ticket?.numero || "",
+        ticket?.presente ? "Presente" : "Pendente",
+        ticket?.checkInEm ? formatDate(ticket.checkInEm) : "",
         formatDate(item.criadoEm)
       ]);
     });
@@ -1468,82 +1555,6 @@ function exportCsv() {
   URL.revokeObjectURL(url);
   showAdminToast("Lista exportada em CSV.");
 }
-
-// ============================================================
-// Eventos
-// ============================================================
-
-searchInput.addEventListener("input", render);
-statusFilter.addEventListener("change", render);
-exportCsvBtn.addEventListener("click", exportCsv);
-
-tabGuestsBtn.addEventListener("click", () => trocarSecaoAdmin("guests"));
-tabInvitesBtn.addEventListener("click", () => trocarSecaoAdmin("invites"));
-
-newInviteBtn.addEventListener("click", () => abrirEditorConvite());
-inviteEditorClose.addEventListener("click", fecharEditorConvite);
-inviteCancelBtn.addEventListener("click", fecharEditorConvite);
-inviteSaveBtn.addEventListener("click", salvarCodigoConvite);
-inviteSearchInput.addEventListener("input", renderInviteCodes);
-inviteRefreshBtn.addEventListener("click", () => {
-  inviteLoaded = false;
-  carregarCodigosConvite({ force: true }).catch(console.error);
-});
-
-inviteCodeInput.addEventListener("input", () => {
-  inviteCodeInput.value = inviteCodeInput.value
-    .toUpperCase()
-    .replace(/[^A-Z0-9-]/g, "");
-});
-
-logoutBtn.addEventListener("click", () => {
-  clearAdminToken();
-  sessionStorage.removeItem("cinemaAdmin");
-  localStorage.removeItem(ADMIN_SNAPSHOT_KEY);
-  localStorage.removeItem(INVITE_SNAPSHOT_KEY);
-  window.location.href = "index.html";
-});
-
-ticketAdminClose.addEventListener("click", fecharIngressoAdmin);
-ticketAdminModal.addEventListener("click", event => {
-  if (event.target === ticketAdminModal) {
-    fecharIngressoAdmin();
-  }
-});
-
-ticketAdminDownload.addEventListener("click", baixarIngressoAdmin);
-ticketAdminPrint.addEventListener("click", imprimirIngressoAdmin);
-
-adminConfirmCancel.addEventListener("click", fecharConfirmacaoExclusao);
-adminConfirmDelete.addEventListener("click", confirmarExclusao);
-adminConfirmModal.addEventListener("click", event => {
-  if (event.target === adminConfirmModal) {
-    fecharConfirmacaoExclusao();
-  }
-});
-
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    fecharIngressoAdmin();
-    fecharConfirmacaoExclusao();
-    fecharEditorConvite();
-  }
-});
-
-window.addEventListener("offline", () => {
-  showAdminToast("Você ficou sem internet. Evite fazer check-in até a conexão voltar.", true);
-});
-
-window.addEventListener("online", () => {
-  showAdminToast("Conexão restabelecida.");
-  if (sheetsConfigurado()) {
-    carregarRemoto({ silent: true }).catch(console.error);
-  }
-});
-
-// ============================================================
-// Inicialização
-// ============================================================
 
 async function iniciarAdmin() {
   if (sheetsConfigurado()) {
