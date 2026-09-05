@@ -654,3 +654,109 @@ button:disabled{
 }
 
 
+
+
+/* V18 — código do convite, CPF completo e acompanhantes */
+.cpf-full{
+  white-space:nowrap;
+  color:#e6ddd0;
+  font-family:var(--display);
+  letter-spacing:.7px;
+}
+
+.invite-code-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  max-width:190px;
+  padding:7px 9px;
+  border:1px solid rgba(218,165,60,.22);
+  border-radius:7px;
+  background:rgba(214,156,42,.055);
+  color:#d8b45e;
+  font-family:var(--display);
+  font-size:13px;
+  letter-spacing:.9px;
+  overflow-wrap:anywhere;
+}
+
+.invite-code-badge i{
+  flex:0 0 auto;
+  color:#9f772c;
+  font-size:11px;
+}
+
+.companion-count{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  white-space:nowrap;
+}
+
+.companion-count strong{
+  font-family:var(--cinema);
+  font-size:24px;
+  font-weight:400;
+  color:var(--gold-light);
+}
+
+.companion-count span{
+  font-family:var(--display);
+  font-size:11px;
+  letter-spacing:1px;
+  color:#817766;
+}
+
+@media(max-width:760px){
+  /* Na portaria, CPF, convite e acompanhantes precisam ficar visíveis. */
+  td:nth-child(2),
+  td:nth-child(3),
+  td:nth-child(4){
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:5px;
+    padding:7px 0;
+    border-top:1px solid rgba(255,255,255,.035);
+  }
+
+  td:nth-child(2)::before,
+  td:nth-child(3)::before,
+  td:nth-child(4)::before{
+    flex:0 0 auto;
+    font-family:var(--display);
+    font-size:11px;
+    letter-spacing:1.2px;
+    color:#746b5d;
+  }
+
+  td:nth-child(2)::before{content:"CPF"}
+  td:nth-child(3)::before{content:"CONVITE"}
+  td:nth-child(4)::before{content:"ACOMP."}
+
+  /* Data e resumo ficam secundários no celular. */
+  td:nth-child(6),
+  td:nth-child(7){
+    display:none;
+  }
+
+  td:nth-child(5){
+    padding-top:9px;
+  }
+
+  td:nth-child(8){
+    padding-top:8px;
+    text-align:right;
+  }
+
+  .invite-code-badge{
+    max-width:68%;
+    justify-content:flex-end;
+    text-align:right;
+  }
+
+  .companion-count{
+    justify-content:flex-end;
+  }
+}
