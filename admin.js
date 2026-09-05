@@ -9,6 +9,30 @@ const searchInput = document.getElementById("searchInput");
 const statusFilter = document.getElementById("statusFilter");
 const exportCsvBtn = document.getElementById("exportCsvBtn");
 
+const tabGuestsBtn = document.getElementById("tabGuestsBtn");
+const tabInvitesBtn = document.getElementById("tabInvitesBtn");
+const guestPanel = document.getElementById("guestPanel");
+const invitePanel = document.getElementById("invitePanel");
+
+const inviteTotal = document.getElementById("inviteTotal");
+const inviteAvailable = document.getElementById("inviteAvailable");
+const inviteRedeemed = document.getElementById("inviteRedeemed");
+const inviteInactive = document.getElementById("inviteInactive");
+const newInviteBtn = document.getElementById("newInviteBtn");
+const inviteEditor = document.getElementById("inviteEditor");
+const inviteEditorKicker = document.getElementById("inviteEditorKicker");
+const inviteEditorTitle = document.getElementById("inviteEditorTitle");
+const inviteEditorClose = document.getElementById("inviteEditorClose");
+const inviteCodeInput = document.getElementById("inviteCodeInput");
+const inviteCompanionsInput = document.getElementById("inviteCompanionsInput");
+const inviteNoteInput = document.getElementById("inviteNoteInput");
+const inviteActiveInput = document.getElementById("inviteActiveInput");
+const inviteCancelBtn = document.getElementById("inviteCancelBtn");
+const inviteSaveBtn = document.getElementById("inviteSaveBtn");
+const inviteSearchInput = document.getElementById("inviteSearchInput");
+const inviteRefreshBtn = document.getElementById("inviteRefreshBtn");
+const inviteTable = document.getElementById("inviteTable");
+const inviteEmptyState = document.getElementById("inviteEmptyState");
 
 const totalInscricoes = document.getElementById("totalInscricoes");
 const totalIngressos = document.getElementById("totalIngressos");
@@ -26,6 +50,7 @@ const ticketAdminDownload = document.getElementById("ticketAdminDownload");
 const ticketAdminPrint = document.getElementById("ticketAdminPrint");
 
 const adminConfirmModal = document.getElementById("adminConfirmModal");
+const adminConfirmTitle = document.getElementById("adminConfirmTitle");
 const adminConfirmText = document.getElementById("adminConfirmText");
 const adminConfirmCancel = document.getElementById("adminConfirmCancel");
 const adminConfirmDelete = document.getElementById("adminConfirmDelete");
@@ -38,7 +63,14 @@ let ticketBaseImage = null;
 let currentTicketDataUrl = "";
 let currentTicketCode = "";
 let pendingDeleteIndex = null;
+let pendingInviteDeleteCode = null;
 let toastTimer = null;
+
+let inviteCodes = [];
+let inviteLoaded = false;
+let inviteLoading = false;
+let inviteEditingCode = "";
+const INVITE_SNAPSHOT_KEY = "cinemaInviteCodesSnapshot";
 
 
 // ============================================================
@@ -419,10 +451,24 @@ async function atualizarCheckIn(itemIndex, ticketIndex, button) {
 
 function pedirConfirmacaoExclusao(index) {
   pendingDeleteIndex = index;
+  pendingInviteDeleteCode = null;
   const item = inscricoes[index];
 
+  adminConfirmTitle.textContent = "REMOVER CONVIDADO?";
   adminConfirmText.textContent =
-    `O cadastro de ${item.nome} e todos os ingressos vinculados serão removidos permanentemente.`;
+    `O cadastro de ${item.nome} e todos os ingressos vinculados serão removidos permanentemente. O código do convite será liberado novamente.`;
+
+  adminConfirmModal.classList.add("active");
+  adminConfirmModal.setAttribute("aria-hidden", "false");
+}
+
+function pedirConfirmacaoExclusaoConvite(code) {
+  pendingDeleteIndex = null;
+  pendingInviteDeleteCode = String(code || "");
+
+  adminConfirmTitle.textContent = "REMOVER CÓDIGO?";
+  adminConfirmText.textContent =
+    `O código ${pendingInviteDeleteCode} será removido da lista. Esta ação não pode ser desfeita.`;
 
   adminConfirmModal.classList.add("active");
   adminConfirmModal.setAttribute("aria-hidden", "false");
@@ -430,21 +476,43 @@ function pedirConfirmacaoExclusao(index) {
 
 function fecharConfirmacaoExclusao() {
   pendingDeleteIndex = null;
+  pendingInviteDeleteCode = null;
   adminConfirmModal.classList.remove("active");
   adminConfirmModal.setAttribute("aria-hidden", "true");
 }
 
 async function confirmarExclusao() {
-  if (pendingDeleteIndex === null) return;
-
-  const index = pendingDeleteIndex;
-  const item = inscricoes[index];
+  if (pendingDeleteIndex === null && !pendingInviteDeleteCode) return;
 
   adminConfirmDelete.disabled = true;
   adminConfirmDelete.innerHTML =
     '<i class="fa-solid fa-spinner fa-spin"></i> EXCLUINDO';
 
   try {
+    if (pendingInviteDeleteCode) {
+      const code = pendingInviteDeleteCode;
+
+      await sheetsRequest(
+        "adminInviteDelete",
+        {
+          token: getAdminToken(),
+          code
+        },
+        { timeoutMs: 12000, retries: 1 }
+      );
+
+      inviteCodes = inviteCodes.filter(item => item.code !== code);
+      saveInviteSnapshot();
+      fecharConfirmacaoExclusao();
+      updateInviteSummary();
+      renderInviteCodes();
+      showAdminToast(`Código ${code} removido.`);
+      return;
+    }
+
+    const index = pendingDeleteIndex;
+    const item = inscricoes[index];
+
     if (sheetsConfigurado()) {
       await sheetsRequest("adminDelete", {
         token: getAdminToken(),
@@ -472,7 +540,13 @@ async function confirmarExclusao() {
       return;
     }
 
-    showAdminToast("Não foi possível excluir o cadastro.", true);
+    const message = String(error?.message || "");
+
+    if (message.includes("INVITE_CODE_REDEEMED")) {
+      showAdminToast("Códigos já resgatados não podem ser excluídos.", true);
+    } else {
+      showAdminToast("Não foi possível concluir a exclusão.", true);
+    }
   } finally {
     adminConfirmDelete.disabled = false;
     adminConfirmDelete.innerHTML =
@@ -870,6 +944,422 @@ function render() {
 }
 
 // ============================================================
+// Gestão de códigos dos convites — carregamento sob demanda
+// ============================================================
+
+function saveInviteSnapshot() {
+  try {
+    localStorage.setItem(
+      INVITE_SNAPSHOT_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        codes: inviteCodes
+      })
+    );
+  } catch (_) {}
+}
+
+function loadInviteSnapshot() {
+  try {
+    const snapshot = JSON.parse(
+      localStorage.getItem(INVITE_SNAPSHOT_KEY) || "null"
+    );
+
+    if (
+      !snapshot ||
+      !Array.isArray(snapshot.codes) ||
+      Date.now() - Number(snapshot.savedAt || 0) > 12 * 60 * 60 * 1000
+    ) {
+      return false;
+    }
+
+    inviteCodes = snapshot.codes;
+    updateInviteSummary();
+    renderInviteCodes();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function updateInviteSummary() {
+  const total = inviteCodes.length;
+  const redeemed = inviteCodes.filter(item => item.redeemed).length;
+  const inactive = inviteCodes.filter(
+    item => !item.redeemed && !item.active
+  ).length;
+  const available = inviteCodes.filter(
+    item => !item.redeemed && item.active
+  ).length;
+
+  inviteTotal.textContent = total;
+  inviteAvailable.textContent = available;
+  inviteRedeemed.textContent = redeemed;
+  inviteInactive.textContent = inactive;
+}
+
+function inviteStatus(item) {
+  if (item.redeemed) {
+    return {
+      cls: "redeemed",
+      icon: "fa-circle-check",
+      label: "RESGATADO"
+    };
+  }
+
+  if (!item.active) {
+    return {
+      cls: "inactive",
+      icon: "fa-circle-pause",
+      label: "INATIVO"
+    };
+  }
+
+  return {
+    cls: "available",
+    icon: "fa-circle",
+    label: "DISPONÍVEL"
+  };
+}
+
+function filteredInviteCodes() {
+  const query = String(inviteSearchInput.value || "")
+    .trim()
+    .toLowerCase();
+
+  if (!query) return inviteCodes;
+
+  return inviteCodes.filter(item => {
+    return [
+      item.code,
+      item.note,
+      item.redeemedBy,
+      item.redeemedCpfLast4
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(query);
+  });
+}
+
+function renderInviteCodes() {
+  const items = filteredInviteCodes();
+  inviteTable.innerHTML = "";
+  inviteEmptyState.classList.toggle("hidden", items.length > 0);
+
+  items.forEach(item => {
+    const status = inviteStatus(item);
+    const row = document.createElement("tr");
+    const redeemedInfo = item.redeemed
+      ? `
+        <div class="invite-redeemed-by">
+          <strong>${escapeHtml(item.redeemedBy || "Cadastro localizado")}</strong>
+          <small>${item.redeemedAt ? escapeHtml(formatDate(item.redeemedAt)) : ""}</small>
+        </div>
+      `
+      : '<span class="muted">—</span>';
+
+    row.innerHTML = `
+      <td>
+        <div class="invite-code-main">
+          <i class="fa-solid fa-key"></i>
+          <strong>${escapeHtml(item.code)}</strong>
+        </div>
+      </td>
+      <td>
+        <div class="companion-count">
+          <strong>${Number(item.companions || 0)}</strong>
+          <span>ACOMP.</span>
+        </div>
+      </td>
+      <td>
+        <span class="invite-status ${status.cls}">
+          <i class="fa-solid ${status.icon}"></i>
+          ${status.label}
+        </span>
+      </td>
+      <td>${redeemedInfo}</td>
+      <td><div class="invite-note">${escapeHtml(item.note || "—")}</div></td>
+      <td>
+        <div class="invite-row-actions">
+          <button
+            type="button"
+            class="invite-copy-btn"
+            data-code="${escapeHtml(item.code)}"
+            title="Copiar código"
+          >
+            <i class="fa-regular fa-copy"></i>
+          </button>
+
+          <button
+            type="button"
+            class="invite-edit-btn"
+            data-code="${escapeHtml(item.code)}"
+            title="Editar"
+          >
+            <i class="fa-solid fa-pen"></i>
+          </button>
+
+          <button
+            type="button"
+            class="invite-delete-btn danger"
+            data-code="${escapeHtml(item.code)}"
+            title="Excluir"
+            ${item.redeemed ? "disabled" : ""}
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+
+    inviteTable.appendChild(row);
+  });
+
+  inviteTable.querySelectorAll(".invite-copy-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      copiarCodigoConvite(button.dataset.code);
+    });
+  });
+
+  inviteTable.querySelectorAll(".invite-edit-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      abrirEditorConvite(button.dataset.code);
+    });
+  });
+
+  inviteTable.querySelectorAll(".invite-delete-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      pedirConfirmacaoExclusaoConvite(button.dataset.code);
+    });
+  });
+}
+
+async function carregarCodigosConvite({ force = false, silent = false } = {}) {
+  if (inviteLoading) return;
+
+  if (!force && inviteLoaded) {
+    renderInviteCodes();
+    return;
+  }
+
+  inviteLoading = true;
+  inviteRefreshBtn.disabled = true;
+  inviteRefreshBtn.innerHTML =
+    '<i class="fa-solid fa-spinner fa-spin"></i> ATUALIZANDO';
+
+  try {
+    const result = await sheetsRequest(
+      "adminInviteList",
+      { token: getAdminToken() },
+      { timeoutMs: 12000, retries: 1 }
+    );
+
+    inviteCodes = result.codes || [];
+    inviteLoaded = true;
+    saveInviteSnapshot();
+    updateInviteSummary();
+    renderInviteCodes();
+  } catch (error) {
+    console.error(error);
+
+    if (isAuthError(error)) {
+      clearAdminToken();
+      window.location.href = "index.html";
+      return;
+    }
+
+    const message = String(error?.message || "");
+
+    if (!silent) {
+      if (message.includes("UNKNOWN_ACTION")) {
+        showAdminToast(
+          "A gestão de códigos precisa do Code.gs V19 publicado no Apps Script.",
+          true
+        );
+      } else {
+        showAdminToast("Não foi possível carregar os códigos agora.", true);
+      }
+    }
+  } finally {
+    inviteLoading = false;
+    inviteRefreshBtn.disabled = false;
+    inviteRefreshBtn.innerHTML =
+      '<i class="fa-solid fa-rotate"></i> ATUALIZAR';
+  }
+}
+
+function trocarSecaoAdmin(section) {
+  const invites = section === "invites";
+
+  tabGuestsBtn.classList.toggle("active", !invites);
+  tabInvitesBtn.classList.toggle("active", invites);
+  guestPanel.classList.toggle("hidden", invites);
+  invitePanel.classList.toggle("hidden", !invites);
+
+  if (invites) {
+    const hadCache = loadInviteSnapshot();
+
+    if (hadCache) {
+      carregarCodigosConvite({ force: true, silent: true }).catch(console.error);
+    } else {
+      carregarCodigosConvite().catch(console.error);
+    }
+  }
+}
+
+function abrirEditorConvite(code = "") {
+  inviteEditingCode = String(code || "");
+  const item = inviteCodes.find(entry => entry.code === inviteEditingCode);
+
+  inviteEditor.classList.remove("hidden");
+
+  if (item) {
+    inviteEditorKicker.textContent = "EDITAR CONVITE";
+    inviteEditorTitle.textContent = item.code;
+    inviteCodeInput.value = item.code;
+    inviteCodeInput.disabled = true;
+    inviteCompanionsInput.value = Number(item.companions || 0);
+    inviteNoteInput.value = item.note || "";
+    inviteActiveInput.checked = Boolean(item.active);
+
+    inviteCompanionsInput.disabled = Boolean(item.redeemed);
+    inviteActiveInput.disabled = Boolean(item.redeemed);
+    inviteSaveBtn.innerHTML =
+      '<i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES';
+  } else {
+    inviteEditingCode = "";
+    inviteEditorKicker.textContent = "NOVO CONVITE";
+    inviteEditorTitle.textContent = "CRIAR CÓDIGO";
+    inviteCodeInput.value = "";
+    inviteCodeInput.disabled = false;
+    inviteCompanionsInput.value = 0;
+    inviteCompanionsInput.disabled = false;
+    inviteNoteInput.value = "";
+    inviteActiveInput.checked = true;
+    inviteActiveInput.disabled = false;
+    inviteSaveBtn.innerHTML =
+      '<i class="fa-solid fa-plus"></i> CRIAR CÓDIGO';
+  }
+
+  inviteEditor.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  setTimeout(() => {
+    (item ? inviteNoteInput : inviteCodeInput).focus();
+  }, 100);
+}
+
+function fecharEditorConvite() {
+  inviteEditingCode = "";
+  inviteEditor.classList.add("hidden");
+  inviteCodeInput.disabled = false;
+  inviteCompanionsInput.disabled = false;
+  inviteActiveInput.disabled = false;
+}
+
+async function salvarCodigoConvite() {
+  const companions = Number(inviteCompanionsInput.value);
+  const note = String(inviteNoteInput.value || "").trim();
+  const code = String(inviteCodeInput.value || "")
+    .trim()
+    .toUpperCase();
+
+  if (!Number.isInteger(companions) || companions < 0 || companions > 9) {
+    showAdminToast("Informe de 0 a 9 acompanhantes.", true);
+    return;
+  }
+
+  inviteSaveBtn.disabled = true;
+  const original = inviteSaveBtn.innerHTML;
+  inviteSaveBtn.innerHTML =
+    '<i class="fa-solid fa-spinner fa-spin"></i> SALVANDO';
+
+  try {
+    if (inviteEditingCode) {
+      await sheetsRequest(
+        "adminInviteUpdate",
+        {
+          token: getAdminToken(),
+          code: inviteEditingCode,
+          companions,
+          active: inviteActiveInput.checked,
+          note
+        },
+        { timeoutMs: 12000, retries: 1 }
+      );
+
+      showAdminToast(`Código ${inviteEditingCode} atualizado.`);
+    } else {
+      const result = await sheetsRequest(
+        "adminInviteCreate",
+        {
+          token: getAdminToken(),
+          code,
+          companions,
+          note
+        },
+        { timeoutMs: 12000, retries: 1 }
+      );
+
+      showAdminToast(`Código ${result.code} criado e pronto para envio.`);
+    }
+
+    fecharEditorConvite();
+    inviteLoaded = false;
+    await carregarCodigosConvite({ force: true });
+  } catch (error) {
+    console.error(error);
+
+    if (isAuthError(error)) {
+      clearAdminToken();
+      window.location.href = "index.html";
+      return;
+    }
+
+    const message = String(error?.message || "");
+
+    if (message.includes("INVITE_CODE_ALREADY_EXISTS")) {
+      showAdminToast("Esse código já existe.", true);
+    } else if (message.includes("INVITE_CODE_REDEEMED_LOCKED")) {
+      showAdminToast(
+        "A quantidade de acompanhantes não pode mudar após o resgate.",
+        true
+      );
+    } else if (message.includes("UNKNOWN_ACTION")) {
+      showAdminToast(
+        "Publique o Code.gs V19 no Apps Script antes de usar esta função.",
+        true
+      );
+    } else {
+      showAdminToast("Não foi possível salvar o código.", true);
+    }
+  } finally {
+    inviteSaveBtn.disabled = false;
+    inviteSaveBtn.innerHTML = original;
+  }
+}
+
+async function copiarCodigoConvite(code) {
+  const value = String(code || "");
+
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch (_) {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+
+  showAdminToast(`Código ${value} copiado.`);
+}
+
+
+// ============================================================
 // CSV
 // ============================================================
 
@@ -949,11 +1439,30 @@ searchInput.addEventListener("input", render);
 statusFilter.addEventListener("change", render);
 exportCsvBtn.addEventListener("click", exportCsv);
 
+tabGuestsBtn.addEventListener("click", () => trocarSecaoAdmin("guests"));
+tabInvitesBtn.addEventListener("click", () => trocarSecaoAdmin("invites"));
+
+newInviteBtn.addEventListener("click", () => abrirEditorConvite());
+inviteEditorClose.addEventListener("click", fecharEditorConvite);
+inviteCancelBtn.addEventListener("click", fecharEditorConvite);
+inviteSaveBtn.addEventListener("click", salvarCodigoConvite);
+inviteSearchInput.addEventListener("input", renderInviteCodes);
+inviteRefreshBtn.addEventListener("click", () => {
+  inviteLoaded = false;
+  carregarCodigosConvite({ force: true }).catch(console.error);
+});
+
+inviteCodeInput.addEventListener("input", () => {
+  inviteCodeInput.value = inviteCodeInput.value
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "");
+});
 
 logoutBtn.addEventListener("click", () => {
   clearAdminToken();
   sessionStorage.removeItem("cinemaAdmin");
   localStorage.removeItem(ADMIN_SNAPSHOT_KEY);
+  localStorage.removeItem(INVITE_SNAPSHOT_KEY);
   window.location.href = "index.html";
 });
 
@@ -979,6 +1488,7 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     fecharIngressoAdmin();
     fecharConfirmacaoExclusao();
+    fecharEditorConvite();
   }
 });
 
