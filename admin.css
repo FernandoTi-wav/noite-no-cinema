@@ -1242,3 +1242,175 @@ button:disabled{
     grid-template-columns:1fr 1fr;
   }
 }
+
+
+/* ============================================================
+   V20 — CREDENCIAIS INDIVIDUAIS NO CREDENCIAMENTO
+   ============================================================ */
+
+.credential-group-row>td{
+  vertical-align:top;
+}
+
+.credential-invite-cell{
+  min-width:190px;
+}
+
+.credential-invite-cell .invite-code-badge{
+  margin-top:10px;
+}
+
+.participants-cell{
+  min-width:260px;
+}
+
+.participant-list{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.participant-row{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 9px;
+  border:1px solid rgba(218,165,60,.11);
+  border-radius:7px;
+  background:rgba(8,7,5,.62);
+}
+
+.participant-role{
+  min-width:44px;
+  text-align:center;
+}
+
+.participant-role>span{
+  width:25px;
+  height:25px;
+  margin:0 auto 2px;
+  display:grid;
+  place-items:center;
+  border-radius:6px;
+  background:rgba(209,150,31,.08);
+  color:#d2aa50;
+  font-family:var(--display);
+  font-size:12px;
+}
+
+.participant-role small{
+  font-family:var(--display);
+  font-size:8px;
+  letter-spacing:.8px;
+  color:#71644f;
+}
+
+.participant-data{
+  min-width:0;
+}
+
+.participant-data strong{
+  display:block;
+  color:#e2d9cb;
+  font-family:var(--display);
+  font-size:13px;
+  letter-spacing:.45px;
+  overflow-wrap:anywhere;
+}
+
+.participant-data span{
+  display:block;
+  margin-top:2px;
+  color:#aa9d8b;
+  font-family:var(--display);
+  font-size:12px;
+  letter-spacing:.5px;
+}
+
+.tickets-cell{
+  min-width:330px;
+}
+
+.ticket-chip-code>div{
+  min-width:0;
+}
+
+.ticket-person{
+  display:block;
+  margin-top:2px;
+  max-width:180px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#766d60;
+  font-size:10px;
+  letter-spacing:.4px;
+}
+
+.registration-date-cell{
+  white-space:nowrap;
+}
+
+.credential-actions-cell{
+  text-align:right;
+}
+
+@media(max-width:760px){
+  .credential-group-row{
+    display:block;
+  }
+
+  .credential-group-row>td{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:8px 0!important;
+    border:0!important;
+  }
+
+  .credential-group-row>td+td{
+    border-top:1px solid rgba(255,255,255,.04)!important;
+  }
+
+  .credential-invite-cell,
+  .participants-cell,
+  .tickets-cell,
+  .registration-summary-cell,
+  .credential-actions-cell{
+    display:block!important;
+  }
+
+  .registration-date-cell{
+    display:none!important;
+  }
+
+  .participants-cell::before,
+  .tickets-cell::before{
+    display:block;
+    margin-bottom:7px;
+    font-family:var(--display);
+    font-size:10px;
+    letter-spacing:1.4px;
+    color:#6f6557;
+  }
+
+  .participants-cell::before{
+    content:"PESSOAS / CPF";
+  }
+
+  .tickets-cell::before{
+    content:"INGRESSOS / CHECK-IN";
+  }
+
+  .participant-row{
+    padding:9px;
+  }
+
+  .ticket-person{
+    max-width:none;
+  }
+
+  .credential-actions-cell{
+    text-align:right;
+  }
+}
