@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Bebas+Neue&family=Limelight&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="admin.css?v=18.3.0">
+  <link rel="stylesheet" href="admin.css?v=19.0.0">
 </head>
 <body>
   <div class="admin-shell">
@@ -37,7 +37,18 @@
         <article><span>VAGAS RESTANTES</span><strong id="vagasRestantes">0</strong><i class="fa-solid fa-chair"></i></article>
       </section>
 
-      <section class="table-panel">
+      <nav class="admin-section-tabs" aria-label="Seções do painel">
+        <button type="button" class="active" id="tabGuestsBtn">
+          <i class="fa-solid fa-users"></i>
+          CREDENCIAMENTO
+        </button>
+        <button type="button" id="tabInvitesBtn">
+          <i class="fa-solid fa-key"></i>
+          CÓDIGOS DOS CONVITES
+        </button>
+      </nav>
+
+      <section class="table-panel" id="guestPanel">
         <div class="table-header">
           <div>
             <small>LISTA DE CONVIDADOS</small>
@@ -84,6 +95,130 @@
           <i class="fa-solid fa-ticket"></i>
           <h3>NENHUMA INSCRIÇÃO ENCONTRADA</h3>
           <p>Os convidados cadastrados aparecerão aqui.</p>
+        </div>
+      </section>
+
+      <section class="invite-panel hidden" id="invitePanel">
+        <div class="invite-panel-header">
+          <div>
+            <small>GESTÃO DE CONVITES</small>
+            <h2>CÓDIGOS DOS CONVITES</h2>
+            <p>Crie e controle os códigos enviados aos convidados. A lista só é carregada quando esta seção é aberta.</p>
+          </div>
+
+          <button type="button" class="invite-new-btn" id="newInviteBtn">
+            <i class="fa-solid fa-plus"></i>
+            NOVO CÓDIGO
+          </button>
+        </div>
+
+        <div class="invite-summary-grid">
+          <article>
+            <span>TOTAL</span>
+            <strong id="inviteTotal">0</strong>
+          </article>
+          <article>
+            <span>DISPONÍVEIS</span>
+            <strong id="inviteAvailable">0</strong>
+          </article>
+          <article>
+            <span>RESGATADOS</span>
+            <strong id="inviteRedeemed">0</strong>
+          </article>
+          <article>
+            <span>INATIVOS</span>
+            <strong id="inviteInactive">0</strong>
+          </article>
+        </div>
+
+        <div class="invite-editor hidden" id="inviteEditor">
+          <div class="invite-editor-heading">
+            <div>
+              <small id="inviteEditorKicker">NOVO CONVITE</small>
+              <h3 id="inviteEditorTitle">CRIAR CÓDIGO</h3>
+            </div>
+            <button type="button" id="inviteEditorClose" aria-label="Fechar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="invite-editor-grid">
+            <label>
+              <span>CÓDIGO</span>
+              <input
+                id="inviteCodeInput"
+                type="text"
+                maxlength="40"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Deixe vazio para gerar automaticamente"
+              >
+              <small>Se ficar vazio, o sistema gera algo como CLAUREA-A7K3QP.</small>
+            </label>
+
+            <label>
+              <span>ACOMPANHANTES</span>
+              <input id="inviteCompanionsInput" type="number" min="0" max="9" value="0">
+              <small>0 = somente o convidado principal.</small>
+            </label>
+
+            <label class="invite-note-field">
+              <span>OBSERVAÇÃO</span>
+              <input
+                id="inviteNoteInput"
+                type="text"
+                maxlength="180"
+                placeholder="Ex.: Família João — mesa 04"
+              >
+            </label>
+
+            <label class="invite-active-field">
+              <input id="inviteActiveInput" type="checkbox" checked>
+              <span>CÓDIGO ATIVO</span>
+            </label>
+          </div>
+
+          <div class="invite-editor-actions">
+            <button type="button" class="secondary" id="inviteCancelBtn">CANCELAR</button>
+            <button type="button" class="primary" id="inviteSaveBtn">
+              <i class="fa-solid fa-floppy-disk"></i>
+              CRIAR CÓDIGO
+            </button>
+          </div>
+        </div>
+
+        <div class="invite-toolbar">
+          <div class="invite-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="inviteSearchInput" type="text" placeholder="Buscar código, convidado ou observação">
+          </div>
+
+          <button type="button" class="invite-refresh-btn" id="inviteRefreshBtn">
+            <i class="fa-solid fa-rotate"></i>
+            ATUALIZAR
+          </button>
+        </div>
+
+        <div class="invite-table-scroll">
+          <table class="invite-table">
+            <thead>
+              <tr>
+                <th>CÓDIGO</th>
+                <th>ACOMPANHANTES</th>
+                <th>STATUS</th>
+                <th>RESGATADO POR</th>
+                <th>OBSERVAÇÃO</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="inviteTable"></tbody>
+          </table>
+        </div>
+
+        <div class="invite-empty hidden" id="inviteEmptyState">
+          <i class="fa-solid fa-key"></i>
+          <h3>NENHUM CÓDIGO ENCONTRADO</h3>
+          <p>Crie o primeiro código para enviar aos convidados.</p>
         </div>
       </section>
     </main>
@@ -135,7 +270,7 @@
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
       <small>CONFIRMAR EXCLUSÃO</small>
-      <h2>REMOVER CONVIDADO?</h2>
+      <h2 id="adminConfirmTitle">REMOVER CONVIDADO?</h2>
       <p id="adminConfirmText">O cadastro e os ingressos vinculados serão removidos.</p>
 
       <div class="admin-confirm-actions">
@@ -152,7 +287,7 @@
 
 
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="apps-script-config.js?v=18.3.0"></script>
-  <script src="admin.js?v=18.3.0"></script>
+  <script src="apps-script-config.js?v=19.0.0"></script>
+  <script src="admin.js?v=19.0.0"></script>
 </body>
 </html>
