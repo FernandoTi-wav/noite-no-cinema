@@ -1497,40 +1497,27 @@ function montarMensagemConvite(item) {
     ? "Este convite é válido para 1 pessoa."
     : `Este convite é válido para ${totalPeople} pessoas — 1 convidado principal + ${companions} ${companions === 1 ? "acompanhante" : "acompanhantes"}.`;
 
-  // Gera os emojis em tempo de execução para não depender da
-  // codificação do arquivo JavaScript nem do cache do navegador.
-  const EMOJI = {
-    cinema: String.fromCodePoint(0x1F3AC),
-    sparkle: String.fromCodePoint(0x2728),
-    key: String.fromCodePoint(0x1F511),
-    people: String.fromCodePoint(0x1F465),
-    calendar: String.fromCodePoint(0x1F4C5),
-    pin: String.fromCodePoint(0x1F4CD),
-    ticket: String.fromCodePoint(0x1F39F, 0xFE0F)
-  };
-
   return [
-    `${EMOJI.cinema} *Noite no Cinema — Claurea 60 anos*`,
+    "*Noite no Cinema — Claurea 60 anos*",
     "",
-    `Você recebeu um convite especial para comemorar conosco! ${EMOJI.sparkle}`,
+    "Você recebeu um convite especial para comemorar conosco!",
     "",
-    `${EMOJI.key} *Seu código de convite:*`,
+    "*Seu código de convite:*",
     String(item?.code || ""),
     "",
-    `${EMOJI.people} ${peopleText}`,
+    peopleText,
     "",
     "Para confirmar sua presença e emitir os ingressos, acesse:",
     urlPublicaDoSite(),
     "",
     "No site, informe o código acima e preencha nome e CPF de todas as pessoas incluídas no convite.",
     "",
-    `${EMOJI.calendar} 07/11/2026 às 19:45`,
-    `${EMOJI.pin} Salão de Festas do Golf Ville — Porto das Dunas`,
+    "Data: 07/11/2026 às 19:45",
+    "Local: Salão de Festas do Golf Ville — Porto das Dunas",
     "",
-    `Esperamos você! ${EMOJI.ticket}`
+    "Esperamos você!"
   ].join("\n");
 }
-
 async function copiarTexto(text) {
   try {
     await navigator.clipboard.writeText(text);
