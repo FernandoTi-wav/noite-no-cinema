@@ -411,16 +411,39 @@ function ensureBarcodeLibrary() {
   if (window.JsBarcode) return Promise.resolve(window.JsBarcode);
 
   if (!barcodeLibraryPromise) {
+    const sources = [
+      "https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js",
+      "https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"
+    ];
+
     barcodeLibraryPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js";
-      script.async = true;
-      script.onload = () => {
-        if (window.JsBarcode) resolve(window.JsBarcode);
-        else reject(new Error("BARCODE_LIBRARY_UNAVAILABLE"));
+      let index = 0;
+
+      const tryNext = () => {
+        if (window.JsBarcode) {
+          resolve(window.JsBarcode);
+          return;
+        }
+
+        if (index >= sources.length) {
+          reject(new Error("BARCODE_LIBRARY_LOAD_FAILED"));
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = sources[index++];
+        script.async = true;
+
+        script.onload = () => {
+          if (window.JsBarcode) resolve(window.JsBarcode);
+          else tryNext();
+        };
+
+        script.onerror = tryNext;
+        document.head.appendChild(script);
       };
-      script.onerror = () => reject(new Error("BARCODE_LIBRARY_LOAD_FAILED"));
-      document.head.appendChild(script);
+
+      tryNext();
     }).catch(error => {
       barcodeLibraryPromise = null;
       throw error;
