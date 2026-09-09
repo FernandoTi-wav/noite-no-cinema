@@ -1,8 +1,8 @@
 const CONFIG_ADMIN = {
   capacidadeEvento: Number(window.APP_CONFIG?.capacidadeEvento) || 150,
   ticketBase: "assets/ticket-print-base.png",
-  registrationDeadline: "2026-10-11T00:00:00-03:00",
-  registrationDeadlineDate: "2026-10-10"
+  registrationDeadline: "2026-10-16T00:00:00-03:00",
+  registrationDeadlineDate: "2026-10-15"
 };
 
 const table = document.getElementById("guestTable");
@@ -859,7 +859,7 @@ function getFortalezaDateParts() {
 function calendarDaysUntilRegistrationDeadline() {
   const today = getFortalezaDateParts();
   const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
-  const deadlineUtc = Date.UTC(2026, 9, 10);
+  const deadlineUtc = Date.UTC(2026, 9, 15);
 
   return Math.round((deadlineUtc - todayUtc) / 86400000);
 }
@@ -881,7 +881,7 @@ function updateRegistrationDeadlineSummary() {
 
   if (closed) {
     registrationDeadlineCount.textContent = "ENCERRADO";
-    registrationDeadlineDate.textContent = "PRAZO FINALIZADO EM 10/10/2026";
+    registrationDeadlineDate.textContent = "PRAZO FINALIZADO EM 15/10/2026";
     return;
   }
 
@@ -893,7 +893,7 @@ function updateRegistrationDeadlineSummary() {
 
   registrationDeadlineCount.textContent =
     `${Math.max(0, days)} ${days === 1 ? "DIA" : "DIAS"}`;
-  registrationDeadlineDate.textContent = "RESTANTES • ATÉ 10/10/2026";
+  registrationDeadlineDate.textContent = "RESTANTES • ATÉ 15/10/2026";
 }
 
 function updateSummary() {
