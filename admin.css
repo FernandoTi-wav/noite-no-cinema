@@ -2120,3 +2120,49 @@ button:disabled{
     grid-column:1/-1 !important;
   }
 }
+
+
+/* ============================================================
+   V20.4.3 — GRID DE AÇÕES MOBILE
+   Remove o espaço vazio deixado pela antiga grade de 3 colunas.
+   ============================================================ */
+@media(max-width:760px){
+  #invitePanel .invite-row-actions{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    grid-auto-flow:row !important;
+    grid-auto-columns:auto !important;
+    width:100% !important;
+    min-width:0 !important;
+    gap:10px !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-whatsapp-btn{
+    grid-column:1 / -1 !important;
+    grid-row:auto !important;
+    width:100% !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-message-copy-btn{
+    grid-column:1 / -1 !important;
+    grid-row:auto !important;
+    width:100% !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-edit-btn{
+    grid-column:1 !important;
+    grid-row:auto !important;
+    width:100% !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-delete-btn{
+    grid-column:2 !important;
+    grid-row:auto !important;
+    width:100% !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-share-btn,
+  #invitePanel .invite-row-actions .mobile-share-only{
+    display:none !important;
+  }
+}
