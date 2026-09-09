@@ -1497,25 +1497,37 @@ function montarMensagemConvite(item) {
     ? "Este convite é válido para 1 pessoa."
     : `Este convite é válido para ${totalPeople} pessoas — 1 convidado principal + ${companions} ${companions === 1 ? "acompanhante" : "acompanhantes"}.`;
 
+  // Emojis em escapes Unicode ASCII para evitar corrupção de codificação
+  // em alguns navegadores/fluxos do WhatsApp Web.
+  const EMOJI = {
+    cinema: "\\uD83C\\uDFAC",
+    sparkle: "\\u2728",
+    key: "\\uD83D\\uDD11",
+    people: "\\uD83D\\uDC65",
+    calendar: "\\uD83D\\uDCC5",
+    pin: "\\uD83D\\uDCCD",
+    ticket: "\\uD83C\\uDF9F\\uFE0F"
+  };
+
   return [
-    "🎬 *Noite no Cinema — Claurea 60 anos*",
+    `${EMOJI.cinema} *Noite no Cinema — Claurea 60 anos*`,
     "",
-    "Você recebeu um convite especial para comemorar conosco! ✨",
+    `Você recebeu um convite especial para comemorar conosco! ${EMOJI.sparkle}`,
     "",
-    "🔑 *Seu código de convite:*",
+    `${EMOJI.key} *Seu código de convite:*`,
     String(item?.code || ""),
     "",
-    `👥 ${peopleText}`,
+    `${EMOJI.people} ${peopleText}`,
     "",
     "Para confirmar sua presença e emitir os ingressos, acesse:",
     urlPublicaDoSite(),
     "",
     "No site, informe o código acima e preencha nome e CPF de todas as pessoas incluídas no convite.",
     "",
-    "📅 07/11/2026 às 19:45",
-    "📍 Salão de Festas do Golf Ville — Porto das Dunas",
+    `${EMOJI.calendar} 07/11/2026 às 19:45`,
+    `${EMOJI.pin} Salão de Festas do Golf Ville — Porto das Dunas`,
     "",
-    "Esperamos você! 🎟️"
+    `Esperamos você! ${EMOJI.ticket}`
   ].join("\n");
 }
 
