@@ -1550,3 +1550,307 @@ button:disabled{
     max-width:none;
   }
 }
+
+
+/* ============================================================
+   V20.4.1 — PAINEL DE CONVITES MOBILE
+   Corrige a tabela espremida e mantém WhatsApp/ações visíveis.
+   ============================================================ */
+@media(max-width:760px){
+  /* O painel de convites vira uma lista de cards reais no celular. */
+  #invitePanel{
+    padding:18px 14px !important;
+    overflow:hidden;
+  }
+
+  #invitePanel .invite-panel-header{
+    gap:18px !important;
+    margin-bottom:20px !important;
+  }
+
+  #invitePanel .invite-panel-header h2{
+    font-size:clamp(32px,10vw,46px) !important;
+    line-height:.95 !important;
+    overflow-wrap:anywhere;
+  }
+
+  #invitePanel .invite-panel-header p{
+    max-width:none !important;
+    font-size:15px !important;
+    line-height:1.55 !important;
+  }
+
+  #invitePanel .invite-new-btn{
+    width:100% !important;
+    min-height:54px !important;
+    justify-content:center !important;
+  }
+
+  #invitePanel .invite-summary-grid{
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+  }
+
+  #invitePanel .invite-summary-grid article{
+    min-height:112px !important;
+    padding:18px 16px !important;
+  }
+
+  #invitePanel .invite-summary-grid strong{
+    font-size:38px !important;
+  }
+
+  #invitePanel .invite-toolbar{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+    margin:18px 0 !important;
+  }
+
+  #invitePanel .invite-search-box,
+  #invitePanel .invite-refresh-btn{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  #invitePanel .invite-search-box{
+    min-height:52px !important;
+  }
+
+  #invitePanel .invite-refresh-btn{
+    min-height:52px !important;
+    justify-content:center !important;
+  }
+
+  /* Remove definitivamente a largura desktop que estava
+     empurrando os botões para fora da tela. */
+  #invitePanel .invite-table-scroll{
+    width:100% !important;
+    overflow:visible !important;
+  }
+
+  #invitePanel .invite-table{
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    table-layout:auto !important;
+  }
+
+  #invitePanel .invite-table thead{
+    display:none !important;
+  }
+
+  #invitePanel .invite-table tbody{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:14px !important;
+    width:100% !important;
+  }
+
+  #invitePanel .invite-table tr{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:0 16px !important;
+    width:100% !important;
+    margin:0 !important;
+    padding:17px !important;
+    overflow:hidden !important;
+    border:1px solid rgba(218,165,60,.17) !important;
+    border-radius:14px !important;
+    background:
+      radial-gradient(circle at 100% 0%,rgba(212,158,47,.055),transparent 30%),
+      rgba(6,5,3,.84) !important;
+  }
+
+  /* Reseta as regras genéricas da tabela de credenciamento. */
+  #invitePanel .invite-table td,
+  #invitePanel .invite-table td:nth-child(2),
+  #invitePanel .invite-table td:nth-child(3),
+  #invitePanel .invite-table td:nth-child(4),
+  #invitePanel .invite-table td:nth-child(5),
+  #invitePanel .invite-table td:nth-child(6){
+    display:block !important;
+    width:auto !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:10px 0 !important;
+    border:0 !important;
+    text-align:left !important;
+  }
+
+  #invitePanel .invite-table td::before{
+    display:block !important;
+    margin-bottom:5px !important;
+    font-family:var(--display) !important;
+    font-size:9px !important;
+    line-height:1 !important;
+    letter-spacing:1.4px !important;
+    color:#6f6658 !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(1){
+    grid-column:1/-1 !important;
+    padding-top:1px !important;
+    padding-bottom:13px !important;
+    border-bottom:1px solid rgba(255,255,255,.045) !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(1)::before{
+    content:"CÓDIGO" !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(2)::before{
+    content:"ACOMPANHANTES" !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(3)::before{
+    content:"STATUS" !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(4)::before{
+    content:"RESGATADO POR" !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(5)::before{
+    content:"OBSERVAÇÃO" !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(4),
+  #invitePanel .invite-table td:nth-child(5){
+    grid-column:1/-1 !important;
+    border-top:1px solid rgba(255,255,255,.035) !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(6){
+    grid-column:1/-1 !important;
+    padding-top:14px !important;
+    border-top:1px solid rgba(218,165,60,.10) !important;
+  }
+
+  #invitePanel .invite-table td:nth-child(6)::before{
+    content:"ENVIO / AÇÕES" !important;
+    margin-bottom:10px !important;
+  }
+
+  #invitePanel .invite-code-main{
+    width:100% !important;
+    min-width:0 !important;
+    gap:10px !important;
+  }
+
+  #invitePanel .invite-code-main strong{
+    min-width:0 !important;
+    font-size:17px !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+  }
+
+  #invitePanel .companion-count{
+    justify-content:flex-start !important;
+  }
+
+  #invitePanel .invite-note{
+    max-width:none !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  #invitePanel .invite-redeemed-by{
+    text-align:left !important;
+  }
+
+  /* Ações ficam em uma grade confortável. WhatsApp é a ação
+     principal e ocupa a linha inteira. */
+  #invitePanel .invite-row-actions{
+    display:grid !important;
+    grid-template-columns:1fr 1fr 46px 46px !important;
+    gap:8px !important;
+    width:100% !important;
+    min-width:0 !important;
+    align-items:stretch !important;
+  }
+
+  #invitePanel .invite-row-actions button{
+    width:100% !important;
+    min-width:0 !important;
+    height:44px !important;
+    padding:0 10px !important;
+    border-radius:8px !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-whatsapp-btn{
+    grid-column:1/-1 !important;
+    display:flex !important;
+    min-height:48px !important;
+    font-size:14px !important;
+    border-color:rgba(69,194,105,.35) !important;
+    background:rgba(38,164,75,.11) !important;
+    color:#8ae2a0 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-whatsapp-btn i{
+    font-size:18px !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-message-copy-btn{
+    grid-column:1/3 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-share-btn{
+    display:grid !important;
+    grid-column:3 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-edit-btn{
+    grid-column:4 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-delete-btn{
+    grid-column:4 !important;
+  }
+
+  /* Quando o compartilhamento nativo não é útil, editar/excluir
+     continuam acessíveis sem estourar o card. */
+  #invitePanel .invite-row-actions .invite-edit-btn,
+  #invitePanel .invite-row-actions .invite-delete-btn{
+    justify-self:stretch !important;
+  }
+
+  #invitePanel .muted{
+    color:#70685c !important;
+  }
+}
+
+@media(max-width:430px){
+  #invitePanel{
+    padding:15px 12px !important;
+  }
+
+  #invitePanel .invite-table tr{
+    padding:15px 14px !important;
+  }
+
+  #invitePanel .invite-row-actions{
+    grid-template-columns:1fr 1fr 44px !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-whatsapp-btn{
+    grid-column:1/-1 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-message-copy-btn{
+    grid-column:1/3 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-share-btn{
+    grid-column:3 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-edit-btn{
+    grid-column:1 !important;
+  }
+
+  #invitePanel .invite-row-actions .invite-delete-btn{
+    grid-column:2 !important;
+  }
+}
