@@ -1497,16 +1497,16 @@ function montarMensagemConvite(item) {
     ? "Este convite é válido para 1 pessoa."
     : `Este convite é válido para ${totalPeople} pessoas — 1 convidado principal + ${companions} ${companions === 1 ? "acompanhante" : "acompanhantes"}.`;
 
-  // Emojis em escapes Unicode ASCII para evitar corrupção de codificação
-  // em alguns navegadores/fluxos do WhatsApp Web.
+  // Gera os emojis em tempo de execução para não depender da
+  // codificação do arquivo JavaScript nem do cache do navegador.
   const EMOJI = {
-    cinema: "\\uD83C\\uDFAC",
-    sparkle: "\\u2728",
-    key: "\\uD83D\\uDD11",
-    people: "\\uD83D\\uDC65",
-    calendar: "\\uD83D\\uDCC5",
-    pin: "\\uD83D\\uDCCD",
-    ticket: "\\uD83C\\uDF9F\\uFE0F"
+    cinema: String.fromCodePoint(0x1F3AC),
+    sparkle: String.fromCodePoint(0x2728),
+    key: String.fromCodePoint(0x1F511),
+    people: String.fromCodePoint(0x1F465),
+    calendar: String.fromCodePoint(0x1F4C5),
+    pin: String.fromCodePoint(0x1F4CD),
+    ticket: String.fromCodePoint(0x1F39F, 0xFE0F)
   };
 
   return [
