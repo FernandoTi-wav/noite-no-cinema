@@ -1222,3 +1222,43 @@ button,input,select{font:inherit}button{border:0}a{text-decoration:none;color:in
     padding:12px;
   }
 }
+
+
+/* V20.2.1 — card do local abre o Google Maps */
+.map-card-link{
+  position:relative;
+  color:inherit;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.map-card-link .map-card-arrow{
+  width:auto;
+  height:auto;
+  margin-left:auto;
+  display:block;
+  place-items:unset;
+  border-radius:0;
+  background:transparent;
+  color:#7f6836;
+  font-size:14px;
+  opacity:.58;
+  transition:.25s ease;
+}
+
+.map-card-link:hover .map-card-arrow{
+  color:var(--gold-light);
+  opacity:1;
+  transform:translate(2px,-2px);
+}
+
+.map-card-link:focus-visible{
+  outline:2px solid rgba(242,203,104,.78);
+  outline-offset:3px;
+}
+
+@media(max-width:520px){
+  .map-card-link .map-card-arrow{
+    font-size:13px;
+  }
+}
