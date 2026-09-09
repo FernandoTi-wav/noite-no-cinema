@@ -215,6 +215,69 @@ function getRecentRegistration(inviteCode) {
   }
 }
 
+const PENDING_INVITE_KEY = "cinemaPendingInviteCode";
+
+function normalizeInviteCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9_-]/g, "")
+    .slice(0, 40);
+}
+
+function savePendingInviteCode(inviteCode) {
+  const code = normalizeInviteCode(inviteCode);
+
+  if (!code) return;
+
+  try {
+    localStorage.setItem(PENDING_INVITE_KEY, code);
+  } catch (_) {}
+}
+
+function getPendingInviteCode() {
+  try {
+    return normalizeInviteCode(localStorage.getItem(PENDING_INVITE_KEY) || "");
+  } catch (_) {
+    return "";
+  }
+}
+
+function clearPendingInviteCode() {
+  try {
+    localStorage.removeItem(PENDING_INVITE_KEY);
+  } catch (_) {}
+}
+
+function getInviteCodeFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    const fromQuery = normalizeInviteCode(url.searchParams.get("convite"));
+
+    if (fromQuery) return fromQuery;
+
+    const hash = String(url.hash || "").replace(/^#/, "");
+    const hashParams = new URLSearchParams(hash);
+    return normalizeInviteCode(hashParams.get("convite"));
+  } catch (_) {
+    return "";
+  }
+}
+
+function removeInviteCodeFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("convite");
+
+    if (String(url.hash || "").includes("convite=")) {
+      url.hash = "";
+    }
+
+    history.replaceState({}, document.title, url.href);
+  } catch (_) {}
+}
+
 function friendlySheetsError(error) {
   const message = String(error?.message || error || '');
 
@@ -334,15 +397,11 @@ document.addEventListener("input", event => {
 });
 
 inviteCodeInput.addEventListener("input", function () {
-  this.value = this.value
-    .toUpperCase()
-    .replace(/\s+/g, "")
-    .replace(/[^A-Z0-9_-]/g, "")
-    .slice(0, 40);
+  this.value = normalizeInviteCode(this.value);
 
   if (
     validatedInvite &&
-    this.value.trim().toUpperCase() !== validatedInvite.code
+    this.value !== validatedInvite.code
   ) {
     resetInviteValidation(false);
   }
@@ -774,15 +833,20 @@ function resetInviteValidation(clearCode = true) {
 
   if (clearCode) {
     inviteCodeInput.value = "";
+    clearPendingInviteCode();
+    removeInviteCodeFromUrl();
   }
 }
 
-async function validarCodigoConvite() {
-  const inviteCode = inviteCodeInput.value.trim().toUpperCase();
+async function validarCodigoConvite(options = {}) {
+  const automatic = options?.automatic === true;
+  const inviteCode = normalizeInviteCode(inviteCodeInput.value);
 
   if (!inviteCode) {
-    mostrarToast("Digite o código do convite recebido.", true);
-    inviteCodeInput.focus();
+    if (!automatic) {
+      mostrarToast("Digite o código do convite recebido.", true);
+      inviteCodeInput.focus();
+    }
     return;
   }
 
@@ -792,8 +856,10 @@ async function validarCodigoConvite() {
   }
 
   if (validatedInvite?.code === inviteCode) {
-    resetInviteValidation(false);
-    inviteCodeInput.focus();
+    if (!automatic) {
+      resetInviteValidation(false);
+      inviteCodeInput.focus();
+    }
     return;
   }
 
@@ -815,6 +881,8 @@ async function validarCodigoConvite() {
       quantity: Number(result.invite.quantity || 1)
     };
 
+    savePendingInviteCode(validatedInvite.code);
+
     inviteCodeInput.value = validatedInvite.code;
     inviteCodeInput.disabled = true;
 
@@ -828,8 +896,8 @@ async function validarCodigoConvite() {
     `;
 
     inviteReleaseSummary.innerHTML = validatedInvite.companions > 0
-      ? `Este código libera <strong>1 convidado principal + ${validatedInvite.companions} ${validatedInvite.companions === 1 ? "acompanhante" : "acompanhantes"}</strong>. Preencha os dados de todas as pessoas abaixo.`
-      : "Este código libera <strong>somente o convidado principal</strong>.";
+      ? `Este convite libera <strong>1 convidado principal + ${validatedInvite.companions} ${validatedInvite.companions === 1 ? "acompanhante" : "acompanhantes"}</strong>. Preencha os dados de todas as pessoas abaixo.`
+      : "Este convite libera <strong>somente o convidado principal</strong>.";
 
     renderAttendeeFields(validatedInvite.quantity);
     peopleStep.classList.remove("hidden");
@@ -839,20 +907,74 @@ async function validarCodigoConvite() {
       '<i class="fa-solid fa-pen"></i><span>TROCAR CÓDIGO</span>';
     validateInviteButton.disabled = false;
 
-    setTimeout(() => {
-      attendeeFields.querySelector(".attendee-name")?.focus();
-    }, 120);
+    if (!automatic) {
+      setTimeout(() => {
+        attendeeFields.querySelector(".attendee-name")?.focus();
+      }, 120);
+    }
 
     peopleStep.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (error) {
     validatedInvite = null;
-    mostrarToast(friendlySheetsError(error), true);
     validateInviteButton.disabled = false;
     validateInviteButton.innerHTML = original;
+
+    const message = String(error?.message || "");
+
+    if (automatic && message.includes("INVITE_CODE_ALREADY_REDEEMED")) {
+      const recente = getRecentRegistration(inviteCode);
+
+      if (recente?.tickets?.length) {
+        clearPendingInviteCode();
+
+        await mostrarPopupCadastro({
+          kicker: "INGRESSOS LOCALIZADOS",
+          title: "JÁ ESTÁ TUDO CERTO!",
+          text: "Este convite já foi confirmado neste aparelho. Seus ingressos serão exibidos novamente.",
+          quantidade: recente.tickets.length
+        });
+
+        await renderizarIngressos(recente);
+        return;
+      }
+    }
+
+    if (
+      message.includes("INVITE_CODE_NOT_FOUND") ||
+      message.includes("INVITE_CODE_INACTIVE") ||
+      message.includes("INVITE_CODE_ALREADY_REDEEMED")
+    ) {
+      clearPendingInviteCode();
+    }
+
+    mostrarToast(friendlySheetsError(error), true);
   }
 }
-
 validateInviteButton.addEventListener("click", validarCodigoConvite);
+
+async function carregarConviteAutomaticamente() {
+  const fromUrl = getInviteCodeFromUrl();
+  const pending = getPendingInviteCode();
+  const inviteCode = fromUrl || pending;
+
+  if (!inviteCode) return;
+
+  inviteCodeInput.value = inviteCode;
+
+  if (fromUrl) {
+    savePendingInviteCode(fromUrl);
+  }
+
+  await validarCodigoConvite({ automatic: true });
+}
+
+window.addEventListener("load", () => {
+  // Espera a abertura cinematográfica terminar antes de levar o convidado
+  // diretamente para o formulário liberado pelo link pessoal.
+  setTimeout(() => {
+    carregarConviteAutomaticamente().catch(console.error);
+  }, 2750);
+});
 
 function pluralizarIngresso(qtd) {
   return `${qtd} ${qtd === 1 ? "ingresso confirmado" : "ingressos confirmados"}`;
@@ -974,6 +1096,7 @@ ticketForm.addEventListener("submit", async event => {
       );
 
       saveRecentRegistration(inviteCode, inscricao);
+      clearPendingInviteCode();
 
       await mostrarPopupCadastro({
         kicker: "CREDENCIAMENTO CONCLUÍDO",

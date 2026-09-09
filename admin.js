@@ -1489,6 +1489,13 @@ function urlPublicaDoSite() {
   return new URL("index.html", window.location.href).href;
 }
 
+function urlConvitePersonalizado(item) {
+  const url = new URL(urlPublicaDoSite());
+  url.searchParams.set("convite", String(item?.code || ""));
+  url.hash = "ingresso";
+  return url.href;
+}
+
 function montarMensagemConvite(item) {
   const companions = Number(item?.companions || 0);
   const totalPeople = companions + 1;
@@ -1502,15 +1509,14 @@ function montarMensagemConvite(item) {
     "",
     "Você recebeu um convite especial para comemorar conosco!",
     "",
-    "*Seu código de convite:*",
-    String(item?.code || ""),
-    "",
     peopleText,
     "",
-    "Para confirmar sua presença e emitir os ingressos, acesse:",
-    urlPublicaDoSite(),
+    "*Confirme sua presença pelo seu link pessoal:*",
+    urlConvitePersonalizado(item),
     "",
-    "No site, informe o código acima e preencha nome e CPF de todas as pessoas incluídas no convite.",
+    "Ao abrir o link, seu convite será reconhecido automaticamente. Ele só será resgatado depois que você preencher os dados e confirmar a emissão dos ingressos.",
+    "",
+    `Código de apoio: ${String(item?.code || "")}`,
     "",
     "Data: 07/11/2026 às 19:45",
     "Local: Salão de Festas do Golf Ville — Porto das Dunas",
