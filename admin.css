@@ -2100,3 +2100,23 @@ button:disabled{
     padding:15px !important;
   }
 }
+
+
+/* ============================================================
+   V20.4.2 — REMOVE COMPARTILHAR
+   WhatsApp já cobre o envio no celular; o botão extra era redundante.
+   ============================================================ */
+.invite-share-btn,
+.mobile-share-only{
+  display:none !important;
+}
+
+@media(max-width:760px){
+  .invite-row-actions{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  .invite-row-actions .invite-message-copy-btn{
+    grid-column:1/-1 !important;
+  }
+}

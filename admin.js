@@ -1250,16 +1250,6 @@ function renderInviteCodes() {
 
           <button
             type="button"
-            class="invite-share-btn mobile-share-only"
-            data-code="${escapeHtml(item.code)}"
-            title="Compartilhar convite"
-            ${item.redeemed || !item.active ? "disabled" : ""}
-          >
-            <i class="fa-solid fa-share-nodes"></i>
-          </button>
-
-          <button
-            type="button"
             class="invite-edit-btn"
             data-code="${escapeHtml(item.code)}"
             title="Editar"
@@ -1292,12 +1282,6 @@ function renderInviteCodes() {
   inviteTable.querySelectorAll(".invite-message-copy-btn").forEach(button => {
     button.addEventListener("click", () => {
       copiarMensagemConvite(button.dataset.code);
-    });
-  });
-
-  inviteTable.querySelectorAll(".invite-share-btn").forEach(button => {
-    button.addEventListener("click", () => {
-      compartilharConvite(button.dataset.code);
     });
   });
 
