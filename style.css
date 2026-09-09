@@ -1327,3 +1327,100 @@ button,input,select{font:inherit}button{border:0}a{text-decoration:none;color:in
 .registration-deadline.closed small{
   color:#a75d5d;
 }
+
+
+/* ============================================================
+   V20.4 — PERFORMANCE
+   Mantém a identidade visual, mas reduz repaints e trabalho fora
+   da tela, especialmente em celulares.
+   ============================================================ */
+
+/* O ruído era redesenhado 4 vezes por segundo em uma área de 180%
+   da tela. Como a opacidade é mínima, deixá-lo estático preserva o
+   visual e reduz bastante o custo de pintura. */
+.grain{
+  animation:none !important;
+}
+
+/* Seções pesadas abaixo da dobra só são renderizadas quando se
+   aproximam da viewport. */
+.ticket-section,
+.experience,
+.footer{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 760px;
+}
+
+/* Ajuda o navegador a isolar a pintura do fundo decorativo. */
+.cinematic-background{
+  contain:strict;
+}
+
+/* Ajustes específicos para GPU/CPU de celular. */
+@media(max-width:900px){
+  .page-shell{
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+  }
+
+  .beam{
+    animation:none !important;
+    filter:blur(20px) !important;
+    opacity:.28 !important;
+  }
+
+  .hero::after{
+    filter:blur(30px) !important;
+  }
+
+  /* Mantém o letreiro vivo, mas troca animação de filtros pesados
+     por uma pulsação de opacidade que roda no compositor. */
+  .hero-title .hero-marquee-sign img{
+    animation:cinemaMobilePulse 5.8s ease-in-out infinite 1.1s !important;
+    filter:
+      brightness(1.02)
+      saturate(1.02)
+      drop-shadow(0 0 5px rgba(255,225,145,.28))
+      drop-shadow(0 0 13px rgba(244,184,57,.20)) !important;
+  }
+
+  .hero-title .hero-marquee-sign::before{
+    animation:none !important;
+    filter:blur(12px) brightness(1.25) saturate(1.04) !important;
+    opacity:.16 !important;
+  }
+
+  .hero-title .hero-marquee-sign::after{
+    filter:blur(14px) !important;
+  }
+
+  .marquee-spark{
+    box-shadow:0 0 10px rgba(255,198,68,.65) !important;
+  }
+
+  .ticket-section,
+  .experience,
+  .footer{
+    contain-intrinsic-size:auto 620px;
+  }
+}
+
+@keyframes cinemaMobilePulse{
+  0%,100%{opacity:1}
+  48%{opacity:.94}
+  52%{opacity:1}
+  76%{opacity:.92}
+  80%{opacity:1}
+}
+
+@media(max-width:600px){
+  /* Em telas pequenas o grão quase não é perceptível e pode ser
+     removido por completo. */
+  .grain{
+    display:none !important;
+  }
+
+  .marquee-spark{
+    animation-duration:4.8s !important;
+  }
+}

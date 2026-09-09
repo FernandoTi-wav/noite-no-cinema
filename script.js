@@ -353,20 +353,22 @@ function friendlySheetsError(error) {
 
 
 // ------------------------------------------------------------
-// Inicialização
+// Inicialização otimizada
 // ------------------------------------------------------------
-window.addEventListener("load", async () => {
-  try {
-    ticketBaseImage = await loadImage(CONFIG.ticketBase);
-  } catch (error) {
-    console.error("Não foi possível carregar a arte do ingresso.", error);
-  }
+// A abertura não depende mais do carregamento da arte pesada do ingresso.
+// Assim a cortina termina no tempo certo mesmo em conexões móveis lentas.
+function finalizarIntroNoTempoCerto() {
+  const inicio = Number(window.__cinemaStart) || performance.now();
+  const decorrido = Math.max(0, performance.now() - inicio);
+  const restante = Math.max(0, 2550 - decorrido);
 
   setTimeout(() => {
     cinemaIntro.classList.add("finished");
     document.body.classList.add("loaded");
-  }, 2550);
-});
+  }, restante);
+}
+
+finalizarIntroNoTempoCerto();
 
 if (document.fonts?.ready) {
   document.fonts.ready.catch(() => {});
@@ -374,22 +376,94 @@ if (document.fonts?.ready) {
 
 applyRegistrationDeadlineState();
 
+let ticketBaseImagePromise = null;
+let barcodeLibraryPromise = null;
+
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    image.decoding = "async";
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = src;
   });
 }
 
+function ensureTicketBaseImage() {
+  if (ticketBaseImage) return Promise.resolve(ticketBaseImage);
+
+  if (!ticketBaseImagePromise) {
+    ticketBaseImagePromise = loadImage(CONFIG.ticketBase)
+      .then(image => {
+        ticketBaseImage = image;
+        return image;
+      })
+      .catch(error => {
+        ticketBaseImagePromise = null;
+        throw error;
+      });
+  }
+
+  return ticketBaseImagePromise;
+}
+
+function ensureBarcodeLibrary() {
+  if (window.JsBarcode) return Promise.resolve(window.JsBarcode);
+
+  if (!barcodeLibraryPromise) {
+    barcodeLibraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js";
+      script.async = true;
+      script.onload = () => {
+        if (window.JsBarcode) resolve(window.JsBarcode);
+        else reject(new Error("BARCODE_LIBRARY_UNAVAILABLE"));
+      };
+      script.onerror = () => reject(new Error("BARCODE_LIBRARY_LOAD_FAILED"));
+      document.head.appendChild(script);
+    }).catch(error => {
+      barcodeLibraryPromise = null;
+      throw error;
+    });
+  }
+
+  return barcodeLibraryPromise;
+}
+
+function warmTicketAssets() {
+  const warm = () => {
+    ensureTicketBaseImage().catch(() => {});
+    ensureBarcodeLibrary().catch(() => {});
+  };
+
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(warm, { timeout: 1800 });
+  } else {
+    setTimeout(warm, 300);
+  }
+}
+
+inviteCodeInput.addEventListener("focus", warmTicketAssets, { once: true });
+
 // ------------------------------------------------------------
 // Partículas
 // ------------------------------------------------------------
 function criarParticulas() {
   const container = $("#particles");
+  if (!container) return;
 
-  for (let i = 0; i < 28; i++) {
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobile = window.matchMedia("(max-width: 900px)").matches;
+  const saveData = navigator.connection?.saveData === true;
+  const lowMemory = Number(navigator.deviceMemory || 8) <= 4;
+
+  if (reducedMotion) return;
+
+  const quantidade = mobile || saveData || lowMemory ? 10 : 18;
+
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < quantidade; i++) {
     const particle = document.createElement("span");
     particle.className = "particle";
 
@@ -401,8 +475,10 @@ function criarParticulas() {
     particle.style.animationDuration = `${Math.random() * 8 + 7}s`;
     particle.style.animationDelay = `${Math.random() * 8}s`;
 
-    container.appendChild(particle);
+    fragment.appendChild(particle);
   }
+
+  container.appendChild(fragment);
 }
 criarParticulas();
 
@@ -560,13 +636,13 @@ function criarTickets(quantidade, inscricoes) {
 // Geração gráfica
 // ------------------------------------------------------------
 async function criarImagemIngresso(ticket, index, total) {
-  if (!ticketBaseImage) {
-    ticketBaseImage = await loadImage(CONFIG.ticketBase);
-  }
+  const fontesProntas = document.fonts?.ready || Promise.resolve();
 
-  if (document.fonts?.ready) {
-    await document.fonts.ready;
-  }
+  await Promise.all([
+    ensureTicketBaseImage(),
+    ensureBarcodeLibrary(),
+    fontesProntas
+  ]);
 
   const canvas = document.createElement("canvas");
   canvas.width = ticketBaseImage.naturalWidth;

@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050403">
+  <script>window.__cinemaStart=performance.now();</script>
   <title>Noite no Cinema | Claurea 60 Anos</title>
   <link rel="icon" type="image/svg+xml" href="assets/site-logo.svg?v=7">
   <link rel="shortcut icon" href="assets/site-logo.svg?v=7">
@@ -16,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Bebas+Neue&family=Great+Vibes&family=Limelight&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20.3.2">
+  <link rel="stylesheet" href="style.css?v=20.4.0">
 </head>
 <body>
 
@@ -89,6 +90,8 @@
               <img
                 src="assets/cinema-marquee-transparent-v8.png?v=8.0.0"
                 alt="CINEMA"
+                decoding="async"
+                fetchpriority="high"
               >
               <i class="marquee-spark spark-a"></i>
               <i class="marquee-spark spark-b"></i>
@@ -224,7 +227,7 @@
 
             <div class="ticket-placeholder" id="ticketPlaceholder">
               <div class="ticket-placeholder-image">
-                <img src="assets/ticket-print-base.png" alt="Prévia do ingresso Noite no Cinema">
+                <img src="assets/ticket-print-base.png" alt="Prévia do ingresso Noite no Cinema" loading="lazy" decoding="async" fetchpriority="low">
                 <div class="placeholder-shade"></div>
               </div>
 
@@ -315,11 +318,8 @@
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
-  <!-- Barcode real CODE128 -->
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-
   <!-- Google Sheets + Apps Script -->
   <script src="apps-script-config.js?v=20.0.0"></script>
-  <script src="script.js?v=20.3.2"></script>
+  <script src="script.js?v=20.4.0"></script>
 </body>
 </html>
