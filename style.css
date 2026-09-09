@@ -1262,3 +1262,68 @@ button,input,select{font:inherit}button{border:0}a{text-decoration:none;color:in
     font-size:13px;
   }
 }
+
+
+/* ============================================================
+   V20.3 — PRAZO DE INSCRIÇÃO
+   ============================================================ */
+.registration-deadline{
+  width:min(520px,100%);
+  margin:16px auto 0;
+  padding:12px 15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  border:1px solid rgba(218,165,60,.22);
+  border-radius:9px;
+  background:rgba(202,143,26,.055);
+  color:#c6a04c;
+  text-align:left;
+}
+
+.registration-deadline>i{
+  flex:0 0 auto;
+  font-size:19px;
+  color:var(--gold);
+}
+
+.registration-deadline>div{
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+
+.registration-deadline small{
+  font-family:var(--display);
+  font-size:10px;
+  letter-spacing:1.8px;
+  color:#8b703b;
+}
+
+.registration-deadline strong{
+  font-family:var(--ui);
+  font-size:15px;
+  font-weight:600;
+  color:#dcc071;
+}
+
+.registration-deadline span{
+  margin-top:2px;
+  color:#a67d7d;
+  font-size:12px;
+}
+
+.registration-deadline.closed{
+  border-color:rgba(190,65,65,.28);
+  background:rgba(151,20,23,.075);
+}
+
+.registration-deadline.closed>i,
+.registration-deadline.closed strong{
+  color:#d67373;
+}
+
+.registration-deadline.closed small{
+  color:#a75d5d;
+}

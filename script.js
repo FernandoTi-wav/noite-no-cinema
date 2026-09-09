@@ -5,6 +5,10 @@ const CONFIG = {
   ticketBase: "assets/ticket-print-base.png",
   ticketPrefix: "CINEMA60",
 
+  // Inscrições válidas até o fim de 10/10/2026 no horário de Fortaleza.
+  // O instante abaixo representa exatamente o começo de 11/10/2026.
+  registrationDeadline: "2026-10-11T00:00:00-03:00",
+
   // Limite provisório para os testes locais.
   // Quando o Google Apps Script estiver configurado, o limite será controlado pela planilha.
   capacidadeEvento: 150
@@ -17,6 +21,7 @@ const ticketForm = $("#ticketForm");
 const inviteCodeInput = $("#inviteCode");
 const validateInviteButton = $("#validateInviteButton");
 const inviteValidationStatus = $("#inviteValidationStatus");
+const registrationDeadlineNotice = $("#registrationDeadlineNotice");
 const peopleStep = $("#peopleStep");
 const inviteReleaseSummary = $("#inviteReleaseSummary");
 const attendeeFields = $("#attendeeFields");
@@ -42,6 +47,48 @@ const whatsappFloating = $("#whatsappFloating");
 let ticketBaseImage = null;
 let cadastroEmAndamento = false;
 let validatedInvite = null;
+
+function registrationDeadlinePassed() {
+  const deadline = new Date(CONFIG.registrationDeadline).getTime();
+  return Number.isFinite(deadline) && Date.now() >= deadline;
+}
+
+function applyRegistrationDeadlineState() {
+  const closed = registrationDeadlinePassed();
+
+  if (registrationDeadlineNotice) {
+    registrationDeadlineNotice.classList.toggle("closed", closed);
+
+    registrationDeadlineNotice.innerHTML = closed
+      ? `
+        <i class="fa-solid fa-circle-xmark"></i>
+        <div>
+          <small>PRAZO ENCERRADO</small>
+          <strong>As inscrições encerraram em 10/10/2026</strong>
+          <span>Novos credenciamentos não são mais permitidos.</span>
+        </div>
+      `
+      : `
+        <i class="fa-regular fa-calendar-xmark"></i>
+        <div>
+          <small>PRAZO PARA CONFIRMAÇÃO</small>
+          <strong>Inscrições até 10/10/2026</strong>
+        </div>
+      `;
+  }
+
+  if (closed) {
+    resetInviteValidation(false);
+    inviteCodeInput.disabled = true;
+    validateInviteButton.disabled = true;
+    validateInviteButton.classList.remove("validated");
+    validateInviteButton.innerHTML =
+      '<i class="fa-solid fa-lock"></i><span>INSCRIÇÕES ENCERRADAS</span>';
+    peopleStep.classList.add("hidden");
+  }
+
+  return closed;
+}
 
 function sheetsConfigurado() {
   const url = String(window.APP_CONFIG?.webAppUrl || '').trim();
@@ -324,6 +371,8 @@ window.addEventListener("load", async () => {
 if (document.fonts?.ready) {
   document.fonts.ready.catch(() => {});
 }
+
+applyRegistrationDeadlineState();
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -840,6 +889,14 @@ function resetInviteValidation(clearCode = true) {
 
 async function validarCodigoConvite(options = {}) {
   const automatic = options?.automatic === true;
+
+  if (applyRegistrationDeadlineState()) {
+    if (!automatic) {
+      mostrarToast("As inscrições encerraram em 10/10/2026.", true);
+    }
+    return;
+  }
+
   const inviteCode = normalizeInviteCode(inviteCodeInput.value);
 
   if (!inviteCode) {
@@ -953,6 +1010,8 @@ async function validarCodigoConvite(options = {}) {
 validateInviteButton.addEventListener("click", validarCodigoConvite);
 
 async function carregarConviteAutomaticamente() {
+  if (applyRegistrationDeadlineState()) return;
+
   const fromUrl = getInviteCodeFromUrl();
   const pending = getPendingInviteCode();
   const inviteCode = fromUrl || pending;
@@ -1013,6 +1072,11 @@ function mostrarPopupCadastro({
 // ------------------------------------------------------------
 ticketForm.addEventListener("submit", async event => {
   event.preventDefault();
+
+  if (applyRegistrationDeadlineState()) {
+    mostrarToast("As inscrições encerraram em 10/10/2026.", true);
+    return;
+  }
 
   if (cadastroEmAndamento) {
     return;
