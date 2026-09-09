@@ -1,6 +1,8 @@
 const CONFIG_ADMIN = {
   capacidadeEvento: Number(window.APP_CONFIG?.capacidadeEvento) || 150,
-  ticketBase: "assets/ticket-print-base.png"
+  ticketBase: "assets/ticket-print-base.png",
+  registrationDeadline: "2026-10-11T00:00:00-03:00",
+  registrationDeadlineDate: "2026-10-10"
 };
 
 const table = document.getElementById("guestTable");
@@ -38,6 +40,9 @@ const totalInscricoes = document.getElementById("totalInscricoes");
 const totalIngressos = document.getElementById("totalIngressos");
 const totalPresentes = document.getElementById("totalPresentes");
 const vagasRestantes = document.getElementById("vagasRestantes");
+const deadlineSummaryCard = document.getElementById("deadlineSummaryCard");
+const registrationDeadlineCount = document.getElementById("registrationDeadlineCount");
+const registrationDeadlineDate = document.getElementById("registrationDeadlineDate");
 const logoutBtn = document.getElementById("logoutBtn");
 
 const ticketAdminModal = document.getElementById("ticketAdminModal");
@@ -830,6 +835,67 @@ function imprimirIngressoAdmin() {
 // Dashboard / render
 // ============================================================
 
+function getFortalezaDateParts() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Fortaleza",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+
+  const map = Object.fromEntries(
+    parts
+      .filter(part => part.type !== "literal")
+      .map(part => [part.type, Number(part.value)])
+  );
+
+  return {
+    year: map.year,
+    month: map.month,
+    day: map.day
+  };
+}
+
+function calendarDaysUntilRegistrationDeadline() {
+  const today = getFortalezaDateParts();
+  const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
+  const deadlineUtc = Date.UTC(2026, 9, 10);
+
+  return Math.round((deadlineUtc - todayUtc) / 86400000);
+}
+
+function updateRegistrationDeadlineSummary() {
+  if (
+    !deadlineSummaryCard ||
+    !registrationDeadlineCount ||
+    !registrationDeadlineDate
+  ) {
+    return;
+  }
+
+  const closed = Date.now() >= new Date(CONFIG_ADMIN.registrationDeadline).getTime();
+  const days = calendarDaysUntilRegistrationDeadline();
+
+  deadlineSummaryCard.classList.toggle("closed", closed);
+  deadlineSummaryCard.classList.toggle("last-days", !closed && days >= 0 && days <= 7);
+
+  if (closed) {
+    registrationDeadlineCount.textContent = "ENCERRADO";
+    registrationDeadlineDate.textContent = "PRAZO FINALIZADO EM 10/10/2026";
+    return;
+  }
+
+  if (days === 0) {
+    registrationDeadlineCount.textContent = "ÚLTIMO DIA";
+    registrationDeadlineDate.textContent = "INSCRIÇÕES ATÉ 23:59";
+    return;
+  }
+
+  registrationDeadlineCount.textContent =
+    `${Math.max(0, days)} ${days === 1 ? "DIA" : "DIAS"}`;
+  registrationDeadlineDate.textContent = "RESTANTES • ATÉ 10/10/2026";
+}
+
 function updateSummary() {
   const emitted = inscricoes.reduce((sum, item) => sum + ticketCount(item), 0);
   const checked = inscricoes.reduce((sum, item) => sum + checkedCount(item), 0);
@@ -841,6 +907,8 @@ function updateSummary() {
     0,
     CONFIG_ADMIN.capacidadeEvento - emitted
   );
+
+  updateRegistrationDeadlineSummary();
 }
 
 function matchesStatus(item) {
@@ -1800,5 +1868,8 @@ async function iniciarAdmin() {
 
   carregarLocal();
 }
+
+updateRegistrationDeadlineSummary();
+setInterval(updateRegistrationDeadlineSummary, 60 * 1000);
 
 iniciarAdmin();

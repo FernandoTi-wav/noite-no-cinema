@@ -1480,3 +1480,73 @@ button:disabled{
     display:inline-grid!important;
   }
 }
+
+
+/* ============================================================
+   V20.3.1 — CONTAGEM DO PRAZO DAS INSCRIÇÕES
+   ============================================================ */
+.summary-grid-v9{
+  grid-template-columns:repeat(5,1fr);
+}
+
+.deadline-summary-card small{
+  display:block;
+  margin-top:5px;
+  max-width:150px;
+  font-family:var(--display);
+  font-size:10px;
+  line-height:1.25;
+  letter-spacing:1.1px;
+  color:#84765f;
+}
+
+.deadline-summary-card strong{
+  white-space:nowrap;
+}
+
+.deadline-summary-card.last-days{
+  border-color:rgba(205,142,40,.38);
+  background:linear-gradient(135deg,rgba(38,25,9,.9),rgba(9,7,4,.94));
+}
+
+.deadline-summary-card.last-days strong{
+  color:#f0c25f;
+}
+
+.deadline-summary-card.closed{
+  border-color:rgba(194,67,67,.28);
+  background:linear-gradient(135deg,rgba(39,11,11,.72),rgba(9,5,4,.94));
+}
+
+.deadline-summary-card.closed strong{
+  color:#d77474;
+  font-size:25px;
+}
+
+.deadline-summary-card.closed small{
+  color:#9f6464;
+}
+
+.deadline-summary-card.closed>i{
+  color:rgba(200,76,76,.18);
+}
+
+@media(max-width:1100px){
+  .summary-grid-v9{
+    grid-template-columns:repeat(3,1fr);
+  }
+}
+
+@media(max-width:780px){
+  .summary-grid-v9{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .deadline-summary-card{
+    grid-column:1/-1;
+  }
+
+  .deadline-summary-card small{
+    max-width:none;
+  }
+}
