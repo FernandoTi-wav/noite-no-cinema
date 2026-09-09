@@ -1414,3 +1414,69 @@ button:disabled{
     text-align:right;
   }
 }
+
+
+/* ============================================================
+   V20.1 — ENVIO DE CONVITES POR WHATSAPP / COMPARTILHAMENTO
+   ============================================================ */
+
+.invite-table{
+  min-width:1120px;
+}
+
+.invite-row-actions{
+  min-width:330px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.invite-row-actions button.invite-action-wide{
+  width:auto;
+  min-width:94px;
+  padding:0 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+
+.invite-row-actions button.invite-action-wide span{
+  font-family:var(--display);
+  font-size:11px;
+  letter-spacing:.8px;
+}
+
+.invite-row-actions .invite-whatsapp-btn{
+  border-color:rgba(63,178,95,.26);
+  background:rgba(37,155,70,.065);
+  color:#72d18a;
+}
+
+.invite-row-actions .invite-whatsapp-btn:hover:not(:disabled){
+  border-color:rgba(78,202,112,.48);
+  color:#9ae3ab;
+  background:rgba(38,164,75,.1);
+}
+
+.invite-row-actions .invite-message-copy-btn{
+  border-color:rgba(218,165,60,.22);
+  color:#d0aa58;
+}
+
+.mobile-share-only{
+  display:none!important;
+}
+
+@media(max-width:620px){
+  .invite-table{
+    min-width:1040px;
+  }
+
+  .invite-row-actions{
+    min-width:320px;
+  }
+
+  .mobile-share-only{
+    display:inline-grid!important;
+  }
+}

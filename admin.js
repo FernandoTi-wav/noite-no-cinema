@@ -1160,11 +1160,34 @@ function renderInviteCodes() {
         <div class="invite-row-actions">
           <button
             type="button"
-            class="invite-copy-btn"
+            class="invite-whatsapp-btn invite-action-wide"
             data-code="${escapeHtml(item.code)}"
-            title="Copiar código"
+            title="${item.redeemed ? "Convite já resgatado" : !item.active ? "Ative o código para enviar" : "Enviar convite pelo WhatsApp"}"
+            ${item.redeemed || !item.active ? "disabled" : ""}
+          >
+            <i class="fa-brands fa-whatsapp"></i>
+            <span>${item.redeemed ? "RESGATADO" : "WHATSAPP"}</span>
+          </button>
+
+          <button
+            type="button"
+            class="invite-message-copy-btn invite-action-wide"
+            data-code="${escapeHtml(item.code)}"
+            title="Copiar mensagem completa do convite"
+            ${item.redeemed || !item.active ? "disabled" : ""}
           >
             <i class="fa-regular fa-copy"></i>
+            <span>COPIAR</span>
+          </button>
+
+          <button
+            type="button"
+            class="invite-share-btn mobile-share-only"
+            data-code="${escapeHtml(item.code)}"
+            title="Compartilhar convite"
+            ${item.redeemed || !item.active ? "disabled" : ""}
+          >
+            <i class="fa-solid fa-share-nodes"></i>
           </button>
 
           <button
@@ -1192,9 +1215,21 @@ function renderInviteCodes() {
     inviteTable.appendChild(row);
   });
 
-  inviteTable.querySelectorAll(".invite-copy-btn").forEach(button => {
+  inviteTable.querySelectorAll(".invite-whatsapp-btn").forEach(button => {
     button.addEventListener("click", () => {
-      copiarCodigoConvite(button.dataset.code);
+      enviarConviteWhatsApp(button.dataset.code);
+    });
+  });
+
+  inviteTable.querySelectorAll(".invite-message-copy-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      copiarMensagemConvite(button.dataset.code);
+    });
+  });
+
+  inviteTable.querySelectorAll(".invite-share-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      compartilharConvite(button.dataset.code);
     });
   });
 
@@ -1446,23 +1481,142 @@ async function salvarCodigoConvite() {
   }
 }
 
-async function copiarCodigoConvite(code) {
-  const value = String(code || "");
+function encontrarConvitePorCodigo(code) {
+  return inviteCodes.find(item => item.code === String(code || "")) || null;
+}
 
+function urlPublicaDoSite() {
+  return new URL("index.html", window.location.href).href;
+}
+
+function montarMensagemConvite(item) {
+  const companions = Number(item?.companions || 0);
+  const totalPeople = companions + 1;
+
+  const peopleText = companions === 0
+    ? "Este convite é válido para 1 pessoa."
+    : `Este convite é válido para ${totalPeople} pessoas — 1 convidado principal + ${companions} ${companions === 1 ? "acompanhante" : "acompanhantes"}.`;
+
+  return [
+    "🎬 *Noite no Cinema — Claurea 60 anos*",
+    "",
+    "Você recebeu um convite especial para comemorar conosco! ✨",
+    "",
+    "🔑 *Seu código de convite:*",
+    String(item?.code || ""),
+    "",
+    `👥 ${peopleText}`,
+    "",
+    "Para confirmar sua presença e emitir os ingressos, acesse:",
+    urlPublicaDoSite(),
+    "",
+    "No site, informe o código acima e preencha nome e CPF de todas as pessoas incluídas no convite.",
+    "",
+    "📅 07/11/2026 às 19:45",
+    "📍 Salão de Festas do Golf Ville — Porto das Dunas",
+    "",
+    "Esperamos você! 🎟️"
+  ].join("\n");
+}
+
+async function copiarTexto(text) {
   try {
-    await navigator.clipboard.writeText(value);
+    await navigator.clipboard.writeText(text);
   } catch (_) {
     const textarea = document.createElement("textarea");
-    textarea.value = value;
+    textarea.value = text;
     textarea.style.position = "fixed";
     textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
     document.body.appendChild(textarea);
     textarea.select();
     document.execCommand("copy");
     textarea.remove();
   }
+}
 
-  showAdminToast(`Código ${value} copiado.`);
+async function copiarMensagemConvite(code) {
+  const item = encontrarConvitePorCodigo(code);
+
+  if (!item) {
+    showAdminToast("Não foi possível localizar este convite.", true);
+    return;
+  }
+
+  if (item.redeemed) {
+    showAdminToast("Este convite já foi resgatado.", true);
+    return;
+  }
+
+  if (!item.active) {
+    showAdminToast("Ative o código antes de encaminhá-lo.", true);
+    return;
+  }
+
+  await copiarTexto(montarMensagemConvite(item));
+  showAdminToast(`Mensagem do convite ${item.code} copiada.`);
+}
+
+function enviarConviteWhatsApp(code) {
+  const item = encontrarConvitePorCodigo(code);
+
+  if (!item) {
+    showAdminToast("Não foi possível localizar este convite.", true);
+    return;
+  }
+
+  if (item.redeemed) {
+    showAdminToast("Este convite já foi resgatado.", true);
+    return;
+  }
+
+  if (!item.active) {
+    showAdminToast("Ative o código antes de encaminhá-lo.", true);
+    return;
+  }
+
+  const message = montarMensagemConvite(item);
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+}
+
+async function compartilharConvite(code) {
+  const item = encontrarConvitePorCodigo(code);
+
+  if (!item) {
+    showAdminToast("Não foi possível localizar este convite.", true);
+    return;
+  }
+
+  if (item.redeemed) {
+    showAdminToast("Este convite já foi resgatado.", true);
+    return;
+  }
+
+  if (!item.active) {
+    showAdminToast("Ative o código antes de encaminhá-lo.", true);
+    return;
+  }
+
+  const message = montarMensagemConvite(item);
+
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share({
+        title: "Noite no Cinema — Claurea 60 anos",
+        text: message
+      });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return;
+      }
+    }
+  }
+
+  await copiarTexto(message);
+  showAdminToast("Compartilhamento não disponível. A mensagem foi copiada.");
 }
 
 
