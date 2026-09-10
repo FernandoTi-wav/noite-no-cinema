@@ -211,7 +211,7 @@
 
                 <button type="submit" class="primary-button" id="generateButton">
                   <span class="button-glow"></span>
-                  <span class="button-content"><i class="fa-solid fa-ticket"></i> CONFIRMAR E GERAR INGRESSOS</span>
+                  <span class="button-content"><i class="fa-solid fa-ticket"></i> CONFIRMAR PRESENÇA E GERAR INGRESSOS</span>
                 </button>
               </div>
             </form>
@@ -246,8 +246,6 @@
     </main>
   </div>
 
-
-  <!-- INDICADOR TEMPORÁRIO DO GOOGLE SHEETS -->
   <!-- WHATSAPP FLUTUANTE -->
   <button class="whatsapp-floating" id="whatsappFloating" type="button" aria-label="Contato pelo WhatsApp">
     <span>FALE CONOSCO</span>
@@ -275,7 +273,6 @@
     </div>
   </div>
 
-
   <!-- CONFIRMAÇÃO DE CADASTRO -->
   <div class="success-overlay" id="successModal" aria-hidden="true">
     <div class="success-modal">
@@ -292,14 +289,12 @@
     </div>
   </div>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
-  <!-- Gerador de código de barras CODE128 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 
-  <!-- Adia o aviso de dress code até os ingressos serem gerados -->
-  <script src="dress-after-ticket.js?v=21.0.2"></script>
+  <!-- V22: fluxo do convite + dress code após emissão -->
+  <script src="dress-after-ticket.js?v=22.0.0"></script>
 
   <!-- Google Sheets + Apps Script -->
   <script src="apps-script-config.js?v=21.0.0"></script>
