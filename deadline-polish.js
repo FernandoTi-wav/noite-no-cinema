@@ -99,8 +99,8 @@
     if (!notice || notice.classList.contains("closed")) return;
 
     const strong = notice.querySelector("strong");
-    if (strong && strong.textContent.trim() !== "15/10/2026") {
-      strong.textContent = "15/10/2026";
+    if (strong && strong.textContent.trim() !== "ATÉ 15/10/2026") {
+      strong.textContent = "ATÉ 15/10/2026";
     }
   }
 
