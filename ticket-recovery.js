@@ -2,6 +2,7 @@
   "use strict";
 
   const API_URL = String(window.APP_CONFIG?.webAppUrl || "").trim();
+  const INVITE_SESSION_KEY = "cinemaInviteCodeV22";
 
   function digits(value) {
     return String(value || "").replace(/\D/g, "").slice(0, 11);
@@ -14,6 +15,14 @@
       .replace(/\s+/g, "")
       .replace(/[^A-Z0-9_-]/g, "")
       .slice(0, 40);
+  }
+
+  function knownInviteCode() {
+    return normalizeCode(
+      window.__cinemaInviteCodeV22 ||
+      sessionStorage.getItem(INVITE_SESSION_KEY) ||
+      ""
+    );
   }
 
   function formatCpf(value) {
@@ -86,7 +95,7 @@
     box.innerHTML = `
       <small>JÁ CONFIRMOU SUA PRESENÇA?</small>
       <strong>RECUPERE SEUS INGRESSOS</strong>
-      <p>Use o código do convite e o CPF do convidado principal para acessar novamente os ingressos emitidos.</p>
+      <p>Informe o código do convite e o CPF do convidado principal para baixar ou imprimir novamente os ingressos já emitidos.</p>
       <button type="button" class="ticket-recovery-button" id="openTicketRecovery"><i class="fa-solid fa-ticket"></i> RECUPERAR MEUS INGRESSOS</button>
     `;
 
@@ -105,7 +114,7 @@
         <div class="cinema-info-icon"><i class="fa-solid fa-ticket"></i></div>
         <small>INGRESSOS JÁ EMITIDOS</small>
         <h2 id="ticketRecoveryTitle">RECUPERAR MEUS INGRESSOS</h2>
-        <p class="cinema-info-lead">Informe as duas credenciais usadas para proteger o acesso aos ingressos do seu convite.</p>
+        <p class="cinema-info-lead">Use o código do convite e o CPF do convidado principal. Seus ingressos originais serão carregados novamente, com os mesmos números e códigos de barras.</p>
 
         <div class="ticket-recovery-fields">
           <label class="ticket-recovery-field">
@@ -130,6 +139,9 @@
 
     const codeInput = overlay.querySelector("#ticketRecoveryCode");
     const cpfInput = overlay.querySelector("#ticketRecoveryCpf");
+    const rememberedCode = knownInviteCode();
+    if (rememberedCode) codeInput.value = rememberedCode;
+
     const close = () => {
       overlay.remove();
       document.documentElement.style.overflow = "";
@@ -147,7 +159,7 @@
     });
     overlay.querySelector("#ticketRecoverySubmit")?.addEventListener("click", () => recover(overlay));
 
-    setTimeout(() => codeInput.focus(), 120);
+    setTimeout(() => (rememberedCode ? cpfInput : codeInput).focus(), 120);
   }
 
   function showError(overlay, message) {
@@ -187,12 +199,13 @@
 
       overlay.remove();
       document.documentElement.style.overflow = "";
+      document.documentElement.classList.remove("personal-invite-locked");
 
       if (typeof window.mostrarPopupCadastro === "function") {
         await window.mostrarPopupCadastro({
           kicker: "INGRESSOS RECUPERADOS",
           title: "ENCONTRAMOS SEUS INGRESSOS!",
-          text: "Seus ingressos foram localizados com segurança. Agora você pode baixá-los ou imprimi-los novamente.",
+          text: "Seus ingressos originais foram localizados. Agora você pode baixá-los ou imprimi-los novamente.",
           quantidade: registration.tickets.length
         });
       }
@@ -202,6 +215,7 @@
       }
 
       await window.renderizarIngressos(registration);
+      document.getElementById("ticketResults")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
       const message = String(err?.message || "");
       if (!document.body.contains(overlay)) {
