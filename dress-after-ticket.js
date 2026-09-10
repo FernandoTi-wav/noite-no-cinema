@@ -81,9 +81,62 @@
       .cinema-print-highlight span{display:block;margin-top:4px;color:#f0cfd0;font-size:13px;line-height:1.45}
       #dressCodeModal .cinema-info-primary{display:flex;align-items:center;justify-content:center;gap:9px}
 
-      .hero-registration-cta.has-personal-code button{background:#fff!important;color:#7c0b10!important;min-width:190px}
-      .hero-registration-cta.has-personal-code button strong{display:block!important;color:inherit!important;font-size:13px!important;letter-spacing:1px!important;margin:0!important}
-      .hero-registration-cta.has-personal-code button small{display:block!important;color:inherit!important;opacity:.72;font-size:9px!important;letter-spacing:1px!important;margin-top:1px!important}
+      .hero-registration-cta.has-personal-code button{
+        background:#fff!important;
+        color:#7c0b10!important;
+        min-width:0!important;
+        width:200px!important;
+        height:48px!important;
+        border:none!important;
+        border-radius:12px!important;
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        gap:10px!important;
+        padding:0 18px!important;
+        box-shadow:none!important;
+        font-family:var(--display)!important;
+        font-size:13px!important;
+        font-weight:700!important;
+        letter-spacing:.8px!important;
+        line-height:1!important;
+        white-space:nowrap!important;
+        transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease!important;
+      }
+      .hero-registration-cta.has-personal-code button:hover{
+        transform:translateY(-1px);
+        box-shadow:0 10px 22px rgba(255,255,255,.10)!important;
+      }
+      .hero-registration-cta.has-personal-code button i{
+        font-size:14px!important;
+        color:inherit!important;
+      }
+      .hero-registration-cta.has-personal-code button span,
+      .hero-registration-cta.has-personal-code button strong,
+      .hero-registration-cta.has-personal-code button small{
+        color:inherit!important;
+      }
+      .hero-registration-cta.has-personal-code button .button-stack{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        gap:10px!important;
+      }
+      .hero-registration-cta.has-personal-code button .button-stack strong{
+        display:inline!important;
+        margin:0!important;
+        color:inherit!important;
+        font:inherit!important;
+        letter-spacing:inherit!important;
+      }
+
+      @media(max-width:700px){
+        .hero-registration-cta.has-personal-code button{
+          width:100%!important;
+          max-width:320px!important;
+          justify-self:center!important;
+        }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -146,7 +199,7 @@
 
     if (code) {
       cta.classList.add("has-personal-code");
-      button.innerHTML = `<i class="fa-solid fa-ticket"></i><span><strong>CONFIRMAR PRESENÇA</strong><small>USAR CÓDIGO ${code}</small></span>`;
+      button.innerHTML = `<span class="button-stack"><i class="fa-solid fa-ticket"></i><strong>CONFIRMAR PRESENÇA</strong></span>`;
       button.addEventListener("click", () => activateInvite(code));
     } else {
       button.innerHTML = '<i class="fa-solid fa-ticket"></i> CONFIRMAR PRESENÇA';
