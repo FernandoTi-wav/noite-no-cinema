@@ -145,9 +145,22 @@
     check();
   }
 
+  function loadTicketRecovery() {
+    if (document.getElementById("ticket-recovery-script")) return;
+    const script = document.createElement("script");
+    script.id = "ticket-recovery-script";
+    script.src = "ticket-recovery.js?v=21.1.0";
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", installTicketObserver, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      installTicketObserver();
+      loadTicketRecovery();
+    }, { once: true });
   } else {
     installTicketObserver();
+    loadTicketRecovery();
   }
 })();
