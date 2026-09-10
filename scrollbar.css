@@ -1,0 +1,45 @@
+/* =========================================================
+   SCROLLBAR — NOITE NO CINEMA
+   Dourado, discreto e integrado ao visual do site
+   ========================================================= */
+
+html{
+  scrollbar-width:thin;
+  scrollbar-color:#c79a3b #070604;
+}
+
+::-webkit-scrollbar{
+  width:11px;
+  height:11px;
+}
+
+::-webkit-scrollbar-track{
+  background:linear-gradient(180deg,#050403 0%,#0b0906 100%);
+  border-left:1px solid rgba(215,160,48,.10);
+  box-shadow:inset 0 0 8px rgba(0,0,0,.55);
+}
+
+::-webkit-scrollbar-thumb{
+  min-height:42px;
+  border:2px solid #090704;
+  border-radius:999px;
+  background:linear-gradient(180deg,#f0c867 0%,#d3a13d 48%,#9b6917 100%);
+  box-shadow:
+    0 0 8px rgba(240,200,103,.16),
+    inset 0 1px rgba(255,246,210,.22);
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#ffdb7c 0%,#e2b24b 48%,#b27c20 100%);
+  box-shadow:
+    0 0 12px rgba(255,211,92,.25),
+    inset 0 1px rgba(255,255,230,.26);
+}
+
+::-webkit-scrollbar-thumb:active{
+  background:linear-gradient(180deg,#ffe498 0%,#e8bc59 50%,#bd8523 100%);
+}
+
+::-webkit-scrollbar-corner{
+  background:#070604;
+}
