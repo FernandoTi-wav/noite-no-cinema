@@ -28,8 +28,13 @@
 
   const incomingCode = inviteFromUrl();
 
+  // Convites abertos pelo link pessoal começam somente na apresentação.
+  // A área de resgate fica invisível até o convidado ler as informações
+  // e tocar em CONFIRMAR PRESENÇA.
   if (incomingCode) {
+    document.documentElement.classList.add("personal-invite-locked");
     window.__cinemaInviteCodeV22 = incomingCode;
+
     try {
       sessionStorage.setItem(INVITE_SESSION_KEY, incomingCode);
       sessionStorage.setItem(`cinemaInstructionsRead:${incomingCode}`, "1");
@@ -55,6 +60,11 @@
     const style = document.createElement("style");
     style.id = "dress-after-ticket-styles";
     style.textContent = `
+      html.personal-invite-locked #ingresso,
+      html.personal-invite-locked .nav-link[href="#ingresso"]{
+        display:none!important
+      }
+
       .dress-code-banner{color:#fff!important;border-color:rgba(255,255,255,.34)!important}
       .dress-code-banner>i{color:#fff!important}
       .dress-code-banner small{color:rgba(255,255,255,.72)!important}
@@ -139,9 +149,15 @@
     const ticketSection = document.getElementById("ingresso");
     if (!input || !validate || !ticketSection) return;
 
+    // Libera a área somente após a confirmação explícita do convidado.
+    document.documentElement.classList.remove("personal-invite-locked");
     input.value = code;
+
     try { localStorage.setItem(PENDING_KEY, code); } catch (_) {}
-    ticketSection.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    requestAnimationFrame(() => {
+      ticketSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
 
     setTimeout(() => {
       if (!input.disabled) validate.click();
