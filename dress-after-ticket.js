@@ -284,7 +284,7 @@
     if (document.getElementById("ticket-recovery-script")) return;
     const script = document.createElement("script");
     script.id = "ticket-recovery-script";
-    script.src = "ticket-recovery.js?v=21.1.0";
+    script.src = "ticket-recovery.js?v=21.2.0";
     script.defer = true;
     document.head.appendChild(script);
   }
