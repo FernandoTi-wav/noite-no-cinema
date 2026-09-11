@@ -54,9 +54,9 @@
       card.id = "peopleConfirmedCard";
       card.className = "summary-extra";
       card.innerHTML = `
-        <span>PESSOAS CONFIRMADAS</span>
-        <strong id="peopleConfirmedValue">0 / 120</strong>
-        <small id="peopleConfirmedDetail">0 pessoas confirmadas</small>
+        <span>CONVITES CONFIRMADOS</span>
+        <strong id="peopleConfirmedValue">0</strong>
+        <small id="peopleConfirmedDetail">0 convites resgatados</small>
         <i class="fa-solid fa-person-circle-check"></i>
       `;
       const deadline = document.getElementById("deadlineSummaryCard");
@@ -79,10 +79,12 @@
   }
 
   function refreshSummaryCards() {
+    const confirmationsEl = document.getElementById("totalInscricoes");
     const emittedEl = document.getElementById("totalIngressos");
     const remainingEl = document.getElementById("vagasRestantes");
-    if (!emittedEl || !remainingEl) return;
+    if (!confirmationsEl || !emittedEl || !remainingEl) return;
 
+    const confirmations = Math.max(0, Number(confirmationsEl.textContent) || 0);
     const emitted = Math.max(0, Number(emittedEl.textContent) || 0);
     const remaining = Math.max(0, Number(remainingEl.textContent) || 0);
     const capacity = Math.max(1, emitted + remaining);
@@ -93,8 +95,8 @@
     const occupancyValue = document.getElementById("occupancyValue");
     const occupancyDetail = document.getElementById("occupancyDetail");
 
-    if (peopleValue) peopleValue.textContent = `${emitted} / ${capacity}`;
-    if (peopleDetail) peopleDetail.textContent = `${emitted} ${emitted === 1 ? "pessoa confirmada" : "pessoas confirmadas"}`;
+    if (peopleValue) peopleValue.textContent = String(confirmations);
+    if (peopleDetail) peopleDetail.textContent = `${confirmations} ${confirmations === 1 ? "convite resgatado" : "convites resgatados"}`;
     if (occupancyValue) occupancyValue.textContent = `${percent}%`;
     if (occupancyDetail) occupancyDetail.textContent = `${emitted} de ${capacity} vagas preenchidas`;
   }
@@ -161,10 +163,12 @@
   }
 
   function observeSummary() {
+    const confirmations = document.getElementById("totalInscricoes");
     const emitted = document.getElementById("totalIngressos");
     const remaining = document.getElementById("vagasRestantes");
-    if (!emitted || !remaining) return;
+    if (!confirmations || !emitted || !remaining) return;
     const observer = new MutationObserver(refreshSummaryCards);
+    observer.observe(confirmations, { childList: true, characterData: true, subtree: true });
     observer.observe(emitted, { childList: true, characterData: true, subtree: true });
     observer.observe(remaining, { childList: true, characterData: true, subtree: true });
   }
