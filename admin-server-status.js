@@ -1,6 +1,13 @@
 (() => {
   "use strict";
 
+  // Capacidade oficial do evento.
+  // Este arquivo é carregado depois de apps-script-config.js e antes de admin.js,
+  // então o painel passa a calcular as vagas usando 120 ingressos.
+  if (window.APP_CONFIG) {
+    window.APP_CONFIG.capacidadeEvento = 120;
+  }
+
   const CHECK_INTERVAL = 60000;
   const TIMEOUT = 7000;
 
