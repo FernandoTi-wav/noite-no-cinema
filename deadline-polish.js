@@ -104,9 +104,19 @@
     }
   }
 
+  function loadTicketLinkReminder() {
+    if (document.getElementById("ticket-link-reminder-script")) return;
+    const script = document.createElement("script");
+    script.id = "ticket-link-reminder-script";
+    script.src = "ticket-link-reminder.js?v=1.0.0";
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
   function init() {
     installStyles();
     updateDeadlineText();
+    loadTicketLinkReminder();
 
     const notice = document.getElementById("registrationDeadlineNotice");
     if (!notice) return;
