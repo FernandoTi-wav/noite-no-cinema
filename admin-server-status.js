@@ -132,10 +132,20 @@
     }
   }
 
+  function loadEnhancements() {
+    if (document.getElementById("admin-enhancements-script")) return;
+    const script = document.createElement("script");
+    script.id = "admin-enhancements-script";
+    script.src = "admin-enhancements.js?v=1.0.0";
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
   function init() {
     installStyles();
     createStatus();
     check();
+    loadEnhancements();
     setInterval(check, CHECK_INTERVAL);
     window.addEventListener("online", check);
     window.addEventListener("offline", check);
