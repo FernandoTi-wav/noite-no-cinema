@@ -19,11 +19,11 @@
       }
       .pre-confirmation-highlight .highlight-icon{
         width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;
-        border:1px solid rgba(235,190,94,.28);border-radius:50%;
-        background:rgba(210,153,38,.08);color:#f0c968;font-size:18px
+        border:1px solid rgba(255,255,255,.28);border-radius:50%;
+        background:rgba(255,255,255,.055);color:#fff;font-size:18px
       }
       .pre-confirmation-highlight small{
-        display:block;color:#aa8b50;font-family:var(--display);font-size:10px;
+        display:block;color:rgba(255,255,255,.72);font-family:var(--display);font-size:10px;
         font-weight:700;letter-spacing:1.6px;line-height:1.1
       }
       .pre-confirmation-highlight strong{
@@ -31,7 +31,11 @@
         font-size:17px;font-weight:700;letter-spacing:.65px;line-height:1.08
       }
       .pre-confirmation-highlight span{
-        display:block;margin-top:5px;color:#bcb1a0;font-size:12px;line-height:1.35
+        display:block;margin-top:5px;color:rgba(255,255,255,.84);font-size:12px;line-height:1.35
+      }
+      .pre-confirmation-highlight.dress{
+        border-color:rgba(255,255,255,.34);
+        background:linear-gradient(145deg,rgba(20,16,11,.96),rgba(8,6,4,.97))
       }
       .pre-confirmation-highlight.deadline{
         border-color:rgba(224,64,70,.50);
@@ -79,11 +83,11 @@
     wrap.setAttribute("aria-label", "Informações importantes antes da confirmação");
     wrap.innerHTML = `
       <article class="pre-confirmation-highlight dress">
-        <div class="highlight-icon"><i class="fa-solid fa-star"></i></div>
+        <div class="highlight-icon"><i class="fa-solid fa-masks-theater"></i></div>
         <div>
-          <small>TRAJE DA NOITE</small>
-          <strong>VISTA-SE À CARÁTER</strong>
-          <span>Entre no clima da Noite no Cinema.</span>
+          <small>DRESS CODE DA NOITE</small>
+          <strong>VENHA VESTIDO À CARÁTER</strong>
+          <span>Inspire-se em cinema, Hollywood, tapete vermelho, estrelas ou personagens.</span>
         </div>
       </article>
 
