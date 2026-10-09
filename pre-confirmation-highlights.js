@@ -95,7 +95,7 @@
         <div class="highlight-icon"><i class="fa-regular fa-calendar-check"></i></div>
         <div>
           <small>PRAZO FINAL</small>
-          <strong>25/11/2026</strong>
+          <strong>25/10/2026</strong>
           <span>Confirme sua presença até esta data.</span>
         </div>
       </article>
