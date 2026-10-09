@@ -19,7 +19,7 @@ window.APP_CONFIG = {
   "use strict";
 
   const VERSION = "21.0.0";
-  const DEADLINE_TEXT = "15/10/2026";
+  const DEADLINE_TEXT = "25/11/2026";
   const EVENT_DATE = "07/11/2026";
   const EVENT_TIME = "19:45";
   const VENUE = "Salão de Festas do Golf Ville — Porto das Dunas";
