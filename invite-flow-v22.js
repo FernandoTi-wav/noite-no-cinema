@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const DEADLINE = "25/11/2026";
+  const DEADLINE = "25/10/2026";
   const EVENT_DATE = "07/11/2026";
   const EVENT_TIME = "19:45";
   const VENUE = "Salão de Festas do Golf Ville — Porto das Dunas";
