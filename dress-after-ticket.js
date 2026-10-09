@@ -4,7 +4,7 @@
   const KEY = "cinemaDressCodeSeen";
   const PENDING_KEY = "cinemaPendingInviteCode";
   const INVITE_SESSION_KEY = "cinemaInviteCodeV22";
-  const DEADLINE = "25/11/2026";
+  const DEADLINE = "25/10/2026";
 
   function normalizeCode(value) {
     return String(value || "")
