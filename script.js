@@ -5,9 +5,9 @@ const CONFIG = {
   ticketBase: "assets/ticket-print-base.png",
   ticketPrefix: "CINEMA60",
 
-  // Inscrições válidas até o fim de 15/10/2026 no horário de Fortaleza.
+  // Inscrições válidas até o fim de 25/11/2026 no horário de Fortaleza.
   // O instante abaixo representa exatamente o começo de 16/10/2026.
-  registrationDeadline: "2026-10-16T00:00:00-03:00",
+  registrationDeadline: "2026-11-26T00:00:00-03:00",
 
   // Limite provisório para os testes locais.
   // Quando o Google Apps Script estiver configurado, o limite será controlado pela planilha.
@@ -64,7 +64,7 @@ function applyRegistrationDeadlineState() {
         <i class="fa-solid fa-circle-xmark"></i>
         <div>
           <small>PRAZO ENCERRADO</small>
-          <strong>As inscrições encerraram em 15/10/2026</strong>
+          <strong>As inscrições encerraram em 25/11/2026</strong>
           <span>Novos credenciamentos não são mais permitidos.</span>
         </div>
       `
@@ -72,7 +72,7 @@ function applyRegistrationDeadlineState() {
         <i class="fa-regular fa-calendar-xmark"></i>
         <div>
           <small>PRAZO PARA CONFIRMAÇÃO</small>
-          <strong>Inscrições até 15/10/2026</strong>
+          <strong>Inscrições até 25/11/2026</strong>
         </div>
       `;
   }
@@ -991,7 +991,7 @@ async function validarCodigoConvite(options = {}) {
 
   if (applyRegistrationDeadlineState()) {
     if (!automatic) {
-      mostrarToast("As inscrições encerraram em 15/10/2026.", true);
+      mostrarToast("As inscrições encerraram em 25/11/2026.", true);
     }
     return;
   }
@@ -1173,7 +1173,7 @@ ticketForm.addEventListener("submit", async event => {
   event.preventDefault();
 
   if (applyRegistrationDeadlineState()) {
-    mostrarToast("As inscrições encerraram em 15/10/2026.", true);
+    mostrarToast("As inscrições encerraram em 25/11/2026.", true);
     return;
   }
 
