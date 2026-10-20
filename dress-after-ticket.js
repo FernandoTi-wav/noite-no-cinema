@@ -4,7 +4,6 @@
   const KEY = "cinemaDressCodeSeen";
   const PENDING_KEY = "cinemaPendingInviteCode";
   const INVITE_SESSION_KEY = "cinemaInviteCodeV22";
-  const DEADLINE = "30/10/2026";
 
   function normalizeCode(value) {
     return String(value || "")
@@ -188,10 +187,9 @@
     if (copy) {
       const kicker = copy.querySelector("small");
       const title = copy.querySelector("strong");
-      const deadline = copy.querySelector("span");
       if (kicker) kicker.textContent = "CONFIRMAÇÃO DE PRESENÇA";
       if (title) title.textContent = code ? "CONFIRME SUA PRESENÇA" : "GARANTA SEU LUGAR NO ANIVERSÁRIO";
-      if (deadline) deadline.textContent = `Prazo para confirmação: ${DEADLINE}`;
+      copy.querySelector("span")?.remove();
     }
 
     const button = oldButton.cloneNode(true);
